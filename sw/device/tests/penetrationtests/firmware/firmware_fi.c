@@ -12,10 +12,12 @@
 
 // Include commands
 #include "sw/device/tests/penetrationtests/json/commands.h"
+#include "sw/device/tests/penetrationtests/json/crypto_fi_commands.h"
 #include "sw/device/tests/penetrationtests/json/ibex_fi_commands.h"
 #include "sw/device/tests/penetrationtests/json/otbn_fi_commands.h"
 
 // Include handlers
+#include "fi/crypto_fi.h"
 #include "fi/ibex_fi.h"
 #include "fi/otbn_fi.h"
 #include "lib/extclk_sca_fi.h"
@@ -27,6 +29,9 @@ status_t process_cmd(ujson_t *uj) {
     penetrationtest_cmd_t cmd;
     TRY(ujson_deserialize_penetrationtest_cmd_t(uj, &cmd));
     switch (cmd) {
+      case kPenetrationtestCommandCryptoFi:
+        RESP_ERR(uj, handle_crypto_fi(uj));
+        break;
       case kPenetrationtestCommandExtClkScaFi:
         RESP_ERR(uj, handle_extclk_sca_fi(uj));
         break;
