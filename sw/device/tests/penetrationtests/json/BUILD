@@ -15,6 +15,7 @@ cc_library(
         ":kmac_sca_commands",
         ":otbn_fi_commands",
         ":prng_sca_commands",
+        ":rom_fi_commands",
         ":sha3_sca_commands",
         ":trigger_sca_commands",
         "//sw/device/lib/ujson",
@@ -67,6 +68,13 @@ cc_library(
     name = "prng_sca_commands",
     srcs = ["prng_sca_commands.c"],
     hdrs = ["prng_sca_commands.h"],
+    deps = ["//sw/device/lib/ujson"],
+)
+
+cc_library(
+    name = "rom_fi_commands",
+    srcs = ["rom_fi_commands.c"],
+    hdrs = ["rom_fi_commands.h"],
     deps = ["//sw/device/lib/ujson"],
 )
 
