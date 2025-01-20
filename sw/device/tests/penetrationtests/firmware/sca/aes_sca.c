@@ -31,6 +31,7 @@ static bool fpga_mode = false;
 enum {
   kAesKeyLengthMax = 32,
   kAesKeyLength = 16,
+  kAesIvLength = 12,
   kAesTextLength = 16,
   kTestTimeout = (1000 * 1000),
   /**
@@ -872,8 +873,8 @@ status_t handle_aes_sca_gcm_fvsr_batch(ujson_t *uj) {
   // Receive the AES-GCM input data over uJSON.
   aes_sca_num_ops_t uj_num_ops;
   aes_sca_gcm_triggers_t uj_triggers;
-  aes_sca_block_t uj_iv;
-  aes_sca_key_t uj_key;
+  aes_sca_gcm_iv_key_t uj_fvsr;
+  aes_sca_key_t uj_key_iv;
   aes_sca_num_blocks_t uj_aad_blocks;
   aes_sca_num_blocks_t uj_ptx_blocks;
   aes_sca_block_t uj_aad[kMaxGcmBlocks];
@@ -890,9 +891,12 @@ status_t handle_aes_sca_gcm_fvsr_batch(ujson_t *uj) {
   // uj_triggers.triggers[3] = True/False - process TAG block.
   // uj_triggers.block = int - which AAD or PTX block is captured?
   TRY(ujson_deserialize_aes_sca_gcm_triggers_t(uj, &uj_triggers));
-  // Get fixed IV and fixed KEY.
-  TRY(ujson_deserialize_aes_sca_block_t(uj, &uj_iv));
-  TRY(ujson_deserialize_aes_sca_key_t(uj, &uj_key));
+  // Determine whether the IV or the key is FvsR.
+  // True: FvsR
+  // False: Random
+  TRY(ujson_deserialize_aes_sca_gcm_iv_key_t(uj, &uj_fvsr));
+  // Get fixed IV or key.
+  TRY(ujson_deserialize_aes_sca_key_t(uj, &uj_key_iv));
   // Get number of AAD and PTX blocks we are expecting.
   TRY(ujson_deserialize_aes_sca_num_blocks_t(uj, &uj_aad_blocks));
   TRY(ujson_deserialize_aes_sca_num_blocks_t(uj, &uj_ptx_blocks));
@@ -909,28 +913,47 @@ status_t handle_aes_sca_gcm_fvsr_batch(ujson_t *uj) {
     TRY(ujson_deserialize_aes_sca_block_t(uj, &uj_ptx[it]));
   }
 
-  // Prepare fixed AES IV.
-  dif_aes_iv_t aes_iv_fixed;
-  memset(aes_iv_fixed.iv, 0, 16);
-  memcpy(aes_iv_fixed.iv, uj_iv.block, uj_iv.num_valid_bytes);
-
-  // Generate Fvsr AES IV & key set.
+  // Generate FvsR key and random IV.
   dif_aes_iv_t aes_iv_fvsr[kNumBatchOpsMax];
   uint8_t batch_keys[kNumBatchOpsMax][kAesKeyLength];
   bool sample_fixed = true;
+  // Either the IV or the key can be FvsR. The other one is random.
+  bool random_iv = !uj_fvsr.fvsr[0];
+  bool random_key = !uj_fvsr.fvsr[1];
+  bool fvsr_iv = uj_fvsr.fvsr[0];
+  bool fvsr_key = uj_fvsr.fvsr[1];
   for (size_t it = 0; it < uj_num_ops.num_batch_ops; it++) {
     memset(aes_iv_fvsr[it].iv, 0, 16);
     memset(batch_keys[it], 0, kAesKeyLength);
-    if (sample_fixed) {
-      memcpy(aes_iv_fvsr[it].iv, aes_iv_fixed.iv, uj_iv.num_valid_bytes);
-      memcpy(batch_keys[it], uj_key.key, uj_key.key_length);
-    } else {
+
+    // Check whether key OR iv is Fvsr. The other one is random.
+    if (random_iv) {
       // Generate random IV.
       uint8_t rand_iv[16];
       prng_rand_bytes(rand_iv, 16);
-      memcpy(aes_iv_fvsr[it].iv, rand_iv, uj_iv.num_valid_bytes);
+      memcpy(aes_iv_fvsr[it].iv, rand_iv, kAesIvLength);
+    } else if (random_key) {
       // Generate random key.
-      prng_rand_bytes(batch_keys[it], uj_key.key_length);
+      prng_rand_bytes(batch_keys[it], kAesKeyLength);
+    }
+
+    // Generate FvsR key or IV.
+    if (sample_fixed) {
+      // For the fixed set, take the IV or key received over uJSON.
+      if (fvsr_iv) {
+        memcpy(aes_iv_fvsr[it].iv, uj_key_iv.key, kAesIvLength);
+      } else if (fvsr_key) {
+        memcpy(batch_keys[it], uj_key_iv.key, kAesKeyLength);
+      }
+    } else {
+      // For the random set, generate a random IV or key.
+      if (fvsr_iv) {
+        uint8_t rand_iv[16];
+        prng_rand_bytes(rand_iv, 16);
+        memcpy(aes_iv_fvsr[it].iv, rand_iv, kAesIvLength);
+      } else if (fvsr_key) {
+        prng_rand_bytes(batch_keys[it], kAesKeyLength);
+      }
     }
     sample_fixed = prng_rand_uint32() & 0x1;
   }
@@ -942,14 +965,14 @@ status_t handle_aes_sca_gcm_fvsr_batch(ujson_t *uj) {
     memset(key_fvsr[it].share1, 0, sizeof(key_fvsr[it].share1));
 
     // Mask the provided key.
-    for (int i = 0; i < uj_key.key_length / 4; ++i) {
+    for (int i = 0; i < kAesKeyLength / 4; ++i) {
       key_fvsr[it].share1[i] = pentest_non_linear_layer(
           pentest_linear_layer(pentest_next_lfsr(1, kPentestLfsrMasking)));
       key_fvsr[it].share0[i] =
           *((uint32_t *)batch_keys[it] + i) ^ key_fvsr[it].share1[i];
     }
     // Provide random shares for unused key bits.
-    for (size_t i = uj_key.key_length / 4; i < kAesKeyLengthMax / 4; ++i) {
+    for (size_t i = kAesKeyLength / 4; i < kAesKeyLengthMax / 4; ++i) {
       key_fvsr[it].share1[i] =
           pentest_non_linear_layer(pentest_next_lfsr(1, kPentestLfsrMasking));
       key_fvsr[it].share0[i] =

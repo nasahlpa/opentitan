@@ -79,6 +79,10 @@ UJSON_SERDE_STRUCT(CryptotestAesScaBlock, aes_sca_block_t, AES_SCA_BLOCK);
     field(block, size_t)
 UJSON_SERDE_STRUCT(CryptotestAesScaGcmTriggers, aes_sca_gcm_triggers_t, AES_SCA_GCM_TRIGGERS);
 
+#define AES_SCA_GCM_IV_KEY(field, string) \
+    field(fvsr, bool, 2)
+UJSON_SERDE_STRUCT(CryptotestAesScaGcmIvKey, aes_sca_gcm_iv_key_t, AES_SCA_GCM_IV_KEY);
+
 #define AES_SCA_NUM_OPS(field, string) \
     field(num_batch_ops, size_t)
 UJSON_SERDE_STRUCT(CryptotestAesScaNumOps, aes_sca_num_ops_t, AES_SCA_NUM_OPS);
