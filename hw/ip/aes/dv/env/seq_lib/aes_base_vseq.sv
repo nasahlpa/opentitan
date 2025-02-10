@@ -647,6 +647,10 @@ class aes_base_vseq extends cip_base_vseq #(
 
     end else begin
       while (((aes_item_queue.size() > 0) || (read_queue.size() > 0)) && !rst_set) begin
+        // When processing an AES-GCM message, wait for the IDLE signal as configuring the
+        // GCM phases only works when we are IDLE. For the other modes, write when input_ready
+        // is set.
+        bit wait_for_idle = cfg_item.mode == AES_GCM ? 1 : 0;
         // get the status to make sure we can provide data - but don't wait for output //
         if (aes_item_queue.size() > 0 ) data_item = new();
         status_fsm(cfg_item, data_item, new_msg,
@@ -661,18 +665,37 @@ class aes_base_vseq extends cip_base_vseq #(
           data_item = aes_item_queue.pop_back();
           config_and_transmit(cfg_item, data_item, new_msg, 0, 0,
                                manual_operation, sideload_en, 0, rst_set);
-        end else if (status.input_ready && (aes_item_queue.size() > 0) && write) begin
+        end else if (status.input_ready && (aes_item_queue.size() > 0) && write &&
+                     (~wait_for_idle || status.idle)) begin
           data_item = aes_item_queue.pop_back();
           config_and_transmit(cfg_item, data_item, new_msg, first_data_block,
                               first_aad_block, manual_operation, sideload_en, 0, rst_set);
+          if (data_item.mode == AES_GCM && new_msg == 1) begin
+            // In comparison to other modes, in AES-GCM, the config_and_transmit()
+            // function only configures key and IV when processing the AES_CFG
+            // item. However, as we already popped the next aes_item_queue once,
+            // push it again to the queue such that it gets processed in the next
+            // iteration.
+            aes_item_queue.push_back(data_item);
+          end
           `downcast(clone_item, data_item.clone());
-          read_queue.push_back(clone_item);
+          if (data_item.mode == AES_GCM) begin
+            if (new_msg == 0 && (data_item.item_type == AES_DATA ||
+                                 data_item.item_type == AES_GCM_TAG)) begin
+              // Only read the output for AES_DATA (ptx or ctx) and AES_GCM_TAG
+              // items. AES_AAD and AES_CFG items do not produce an output.
+              read_queue.push_back(clone_item);
+            end
+          end else begin
+            read_queue.push_back(clone_item);
+          end
+          
           if (write) begin
-            if (data_item.item_type == AES_GCM_AAD) begin
+            if (data_item.item_type == AES_GCM_AAD && new_msg == 0) begin
               first_aad_block = 0;
             end
 
-            if (data_item.item_type == AES_DATA) begin
+            if (data_item.item_type == AES_DATA && new_msg == 0) begin
               first_data_block = 0;
             end
           end
