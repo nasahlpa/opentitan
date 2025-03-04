@@ -627,7 +627,7 @@ status_t handle_aes_pentest_init(ujson_t *uj) {
 
   // Disable the instruction cache and dummy instructions for better SCA
   // measurements.
-  pentest_configure_cpu();
+  //pentest_configure_cpu();
 
   // Read device ID and return to host.
   penetrationtest_device_id_t uj_output;
