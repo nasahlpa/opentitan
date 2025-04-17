@@ -57,6 +57,22 @@ UJSON_SERDE_ENUM(IbexFiSubcommand, ibex_fi_subcommand_t, IBEXFI_SUBCOMMAND);
     field(ast_alerts, uint32_t, 2)
 UJSON_SERDE_STRUCT(IbexFiTestResult, ibex_fi_test_result_t, IBEXFI_TEST_RESULT);
 
+#define IBEXFI_TEST_RESULT_SRAM(field, string) \
+    field(err_status, uint32_t) \
+    field(alerts, uint32_t, 3) \
+    field(ast_alerts, uint32_t, 2) \
+    field(data, uint32_t, 64) \
+    field(regs, uint32_t, 32)
+UJSON_SERDE_STRUCT(IbexFiTestResultSram, ibex_fi_test_result_sram_t, IBEXFI_TEST_RESULT_SRAM);
+
+#define IBEXFI_TEST_RESULT_SRAM_32(field, string) \
+    field(err_status, uint32_t) \
+    field(alerts, uint32_t, 3) \
+    field(ast_alerts, uint32_t, 2) \
+    field(data, uint32_t, 32) \
+    field(regs, uint32_t, 32)
+UJSON_SERDE_STRUCT(IbexFiTestResultSram32, ibex_fi_test_result_sram_32_t, IBEXFI_TEST_RESULT_SRAM_32);
+
 #define IBEXFI_TEST_RESULT_REGISTERS(field, string) \
     field(result, uint32_t) \
     field(registers, uint32_t, 32) \
