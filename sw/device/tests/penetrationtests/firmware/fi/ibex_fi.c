@@ -2025,7 +2025,7 @@ status_t handle_ibex_fi_char_sram_write(ujson_t *uj) {
     uj_output.data[i] = res_values[i];
   }
   for (uint32_t it = 0; it < 32; it++) {
-        uj_output.regs[it] = reg_values[it];
+    uj_output.regs[it] = reg_values[it];
   }
 
   // Read ERR_STATUS register.
@@ -2352,7 +2352,7 @@ status_t handle_ibex_fi_char_sram_write_static_unrolled(ujson_t *uj) {
     uj_output.data[i] = res_values[i];
   }
   for (uint32_t it = 0; it < 32; it++) {
-        uj_output.regs[it] = reg_values[it];
+    uj_output.regs[it] = reg_values[it];
   }
 
   // Read ERR_STATUS register.
