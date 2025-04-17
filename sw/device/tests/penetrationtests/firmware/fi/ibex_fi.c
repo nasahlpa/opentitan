@@ -2567,7 +2567,6 @@ status_t handle_ibex_fi_char_unrolled_reg_op_loop(ujson_t *uj) {
 
   // FI code target.
   PENTEST_ASM_TRIGGER_HIGH
-  asm volatile(NOP100);
   asm volatile(ADDI1000);
   asm volatile(ADDI1000);
   asm volatile(ADDI1000);
