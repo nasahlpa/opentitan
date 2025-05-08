@@ -1215,116 +1215,144 @@ status_t handle_ibex_fi_char_csr_write(ujson_t *uj) {
   return OK_STATUS();
 }
 
-status_t handle_ibex_fi_char_flash_read(ujson_t *uj) __attribute__((optnone)) {
+void my_function(void) {
+    asm volatile(NOP1000);
+}
+
+
+status_t handle_ibex_fi_char_flash_read(ujson_t *uj)  {
   // Clear registered alerts in alert handler.
   pentest_registered_alerts_t reg_alerts = pentest_get_triggered_alerts();
   // Clear the AST recoverable alerts.
   pentest_clear_sensor_recov_alerts();
 
-  if (!flash_init) {
-    // Configure the data flash.
-    // Flash configuration.
-    dif_flash_ctrl_region_properties_t region_properties = {
-        .rd_en = kMultiBitBool4True,
-        .prog_en = kMultiBitBool4True,
-        .erase_en = kMultiBitBool4True,
-        .scramble_en = kMultiBitBool4True,
-        .ecc_en = kMultiBitBool4True,
-        .high_endurance_en = kMultiBitBool4False};
+  // if (!flash_init) {
+  //   // Configure the data flash.
+  //   // Flash configuration.
+  //   dif_flash_ctrl_region_properties_t region_properties = {
+  //       .rd_en = kMultiBitBool4True,
+  //       .prog_en = kMultiBitBool4True,
+  //       .erase_en = kMultiBitBool4True,
+  //       .scramble_en = kMultiBitBool4True,
+  //       .ecc_en = kMultiBitBool4True,
+  //       .high_endurance_en = kMultiBitBool4False};
 
-    dif_flash_ctrl_data_region_properties_t data_region = {
-        .base = FLASH_PAGES_PER_BANK,
-        .size = 0x1,
-        .properties = region_properties};
+  //   dif_flash_ctrl_data_region_properties_t data_region = {
+  //       .base = 2*FLASH_PAGES_PER_BANK,
+  //       .size = 0x1,
+  //       .properties = region_properties};
 
-    dif_result_t res_prop =
-        dif_flash_ctrl_set_data_region_properties(&flash, 2, data_region);
+  //   dif_result_t res_prop =
+  //       dif_flash_ctrl_set_data_region_properties(&flash, 2, data_region);
 
-    dif_result_t res_en =
-        dif_flash_ctrl_set_data_region_enablement(&flash, 2, kDifToggleEnabled);
-    if (res_prop == kDifLocked || res_en == kDifLocked) {
-      LOG_INFO("Flash region locked.");
-    }
-    flash_init = true;
-  }
+  //   // dif_result_t res_en =
+  //   //     dif_flash_ctrl_set_data_region_enablement(&flash, 2, kDifToggleEnabled);
+  //   if (res_prop == kDifLocked ) {
+  //     LOG_INFO("Flash region locked.");
+  //   }
+  //   flash_init = true;
+  // }
 
   ptrdiff_t flash_bank_1_addr =
       (ptrdiff_t)flash_info.data_pages * (ptrdiff_t)flash_info.bytes_per_page;
-  mmio_region_t flash_bank_1 = mmio_region_from_addr(
-      TOP_EARLGREY_FLASH_CTRL_MEM_BASE_ADDR + (uintptr_t)flash_bank_1_addr);
+    ptrdiff_t flash_bank_0_last_page_addr =
+      flash_bank_1_addr - (ptrdiff_t)FLASH_PAGE_SZ;
+  mmio_region_t flash_bank_0 = mmio_region_from_addr(
+      TOP_EARLGREY_FLASH_CTRL_MEM_BASE_ADDR + (uintptr_t)flash_bank_0_last_page_addr);
 
   if (!flash_data_valid) {
     // Prepare page and write reference values into it.
     uint32_t input_page[FLASH_UINT32_WORDS_PER_PAGE];
     memset(input_page, 0x0, FLASH_UINT32_WORDS_PER_PAGE * sizeof(uint32_t));
     for (int i = 0; i < 32; i++) {
-      input_page[i] = ref_values[i];
+      input_page[i] = 0xb1ca9997;
     }
 
     // Erase flash and write page with reference values.
-    TRY(flash_ctrl_testutils_erase_and_write_page(
-        &flash, (uint32_t)flash_bank_1_addr, /*partition_id=*/0, input_page,
-        kDifFlashCtrlPartitionTypeData, FLASH_UINT32_WORDS_PER_PAGE));
+    TRY(flash_ctrl_testutils_erase_page(
+        &flash, (uint32_t)flash_bank_0_last_page_addr, /*partition_id=*/0,
+        kDifFlashCtrlPartitionTypeData));
 
     flash_data_valid = true;
   }
 
-  // Result buffer.
-  uint32_t res_values[13];
+  asm volatile("lw x5, (%0)" : : "r"((flash_bank_0.base)));
+  int32_t buffer;
+  asm volatile("mv %0, x5" : "=r"(buffer));
+  LOG_INFO("FLASH INSTR: %d", buffer);
 
-  // Initialize x5-x7, x12-x17, and x28-x30 with 0.
-  init_regs(0);
+  uint32_t address = (uint32_t)flash_bank_0.base;
 
-  // FI code target.
-  PENTEST_ASM_TRIGGER_HIGH
-  asm volatile("lw x5, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x6, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x7, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x12, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x13, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x14, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x15, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x16, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x17, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x28, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x29, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x30, (%0)" : : "r"((flash_bank_1.base)));
-  asm volatile("lw x31, (%0)" : : "r"((flash_bank_1.base)));
-  PENTEST_ASM_TRIGGER_LOW
+  __asm volatile (
+        "mv t0, %0\n"    // Move the address into a temporary register (t0)
+        "jalr x0, 0(t0)" // Jump and link register:
+        : : "r" (address) : "t0" // Input operand (address in a register), clobbered register (t0)
+    );
 
-  // Load register values.
-  read_regs(res_values);
+  // // Result buffer.
+  // uint32_t res_values[13];
 
+  // // Initialize x5-x7, x12-x17, and x28-x30 with 0.
+  // init_regs(0);
+
+  // // FI code target.
+  // PENTEST_ASM_TRIGGER_HIGH
+  // asm volatile("lw x5, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x6, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x7, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x12, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x13, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x14, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x15, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x16, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x17, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x28, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x29, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x30, (%0)" : : "r"((flash_bank_1.base)));
+  // asm volatile("lw x31, (%0)" : : "r"((flash_bank_1.base)));
+  // PENTEST_ASM_TRIGGER_LOW
+
+  // // Load register values.
+  // read_regs(res_values);
+
+  // LOG_INFO("STARTING");
+
+  
+
+  // my_function();
+
+
+  LOG_INFO("STOPPING");
   // Get registered alerts from alert handler.
-  reg_alerts = pentest_get_triggered_alerts();
-  // Get fatal and recoverable AST alerts from sensor controller.
-  pentest_sensor_alerts_t sensor_alerts = pentest_get_sensor_alerts();
+  // reg_alerts = pentest_get_triggered_alerts();
+  // // Get fatal and recoverable AST alerts from sensor controller.
+  // pentest_sensor_alerts_t sensor_alerts = pentest_get_sensor_alerts();
 
-  // Compare against reference values.
-  ibex_fi_faulty_addresses_data_t uj_output;
-  memset(uj_output.addresses, 0, sizeof(uj_output.addresses));
-  memset(uj_output.data, 0, sizeof(uj_output.data));
+  // // Compare against reference values.
+  // ibex_fi_faulty_addresses_data_t uj_output;
+  // memset(uj_output.addresses, 0, sizeof(uj_output.addresses));
+  // memset(uj_output.data, 0, sizeof(uj_output.data));
 
-  for (uint32_t flash_pos = 0; flash_pos < 13; flash_pos++) {
-    if (res_values[flash_pos] != ref_values[0]) {
-      uj_output.addresses[flash_pos] = flash_pos;
-      uj_output.data[flash_pos] = res_values[flash_pos];
+  // for (uint32_t flash_pos = 0; flash_pos < 13; flash_pos++) {
+  //   if (res_values[flash_pos] != ref_values[0]) {
+  //     uj_output.addresses[flash_pos] = flash_pos;
+  //     uj_output.data[flash_pos] = res_values[flash_pos];
 
-      // Re-init flash with valid data.
-      flash_data_valid = false;
-    }
-  }
+  //     // Re-init flash with valid data.
+  //     flash_data_valid = false;
+  //   }
+  // }
 
-  // Read ERR_STATUS register.
-  dif_rv_core_ibex_error_status_t codes;
-  TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes));
+  // // Read ERR_STATUS register.
+  // dif_rv_core_ibex_error_status_t codes;
+  // TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes));
 
-  // Send res & ERR_STATUS to host.
-  uj_output.err_status = codes;
-  memcpy(uj_output.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
-  memcpy(uj_output.ast_alerts, sensor_alerts.alerts,
-         sizeof(sensor_alerts.alerts));
-  RESP_OK(ujson_serialize_ibex_fi_faulty_addresses_data_t, uj, &uj_output);
+  // // Send res & ERR_STATUS to host.
+  // uj_output.err_status = codes;
+  // memcpy(uj_output.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
+  // memcpy(uj_output.ast_alerts, sensor_alerts.alerts,
+  //        sizeof(sensor_alerts.alerts));
+  // RESP_OK(ujson_serialize_ibex_fi_faulty_addresses_data_t, uj, &uj_output);
   return OK_STATUS();
 }
 
