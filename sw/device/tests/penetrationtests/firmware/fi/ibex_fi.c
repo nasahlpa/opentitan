@@ -1215,12 +1215,9 @@ status_t handle_ibex_fi_char_csr_write(ujson_t *uj) {
   return OK_STATUS();
 }
 
-void my_function(void) {
-    asm volatile(NOP1000);
-}
+void my_function(void) { asm volatile(NOP1000); }
 
-
-status_t handle_ibex_fi_char_flash_read(ujson_t *uj)  {
+status_t handle_ibex_fi_char_flash_read(ujson_t *uj) {
   // Clear registered alerts in alert handler.
   pentest_registered_alerts_t reg_alerts = pentest_get_triggered_alerts();
   // Clear the AST recoverable alerts.
@@ -1246,8 +1243,8 @@ status_t handle_ibex_fi_char_flash_read(ujson_t *uj)  {
   //       dif_flash_ctrl_set_data_region_properties(&flash, 2, data_region);
 
   //   // dif_result_t res_en =
-  //   //     dif_flash_ctrl_set_data_region_enablement(&flash, 2, kDifToggleEnabled);
-  //   if (res_prop == kDifLocked ) {
+  //   //     dif_flash_ctrl_set_data_region_enablement(&flash, 2,
+  //   kDifToggleEnabled); if (res_prop == kDifLocked ) {
   //     LOG_INFO("Flash region locked.");
   //   }
   //   flash_init = true;
@@ -1255,10 +1252,11 @@ status_t handle_ibex_fi_char_flash_read(ujson_t *uj)  {
 
   ptrdiff_t flash_bank_1_addr =
       (ptrdiff_t)flash_info.data_pages * (ptrdiff_t)flash_info.bytes_per_page;
-    ptrdiff_t flash_bank_0_last_page_addr =
+  ptrdiff_t flash_bank_0_last_page_addr =
       flash_bank_1_addr - (ptrdiff_t)FLASH_PAGE_SZ;
-  mmio_region_t flash_bank_0 = mmio_region_from_addr(
-      TOP_EARLGREY_FLASH_CTRL_MEM_BASE_ADDR + (uintptr_t)flash_bank_0_last_page_addr);
+  mmio_region_t flash_bank_0 =
+      mmio_region_from_addr(TOP_EARLGREY_FLASH_CTRL_MEM_BASE_ADDR +
+                            (uintptr_t)flash_bank_0_last_page_addr);
 
   if (!flash_data_valid) {
     // Prepare page and write reference values into it.
@@ -1283,11 +1281,13 @@ status_t handle_ibex_fi_char_flash_read(ujson_t *uj)  {
 
   uint32_t address = (uint32_t)flash_bank_0.base;
 
-  __asm volatile (
-        "mv t0, %0\n"    // Move the address into a temporary register (t0)
-        "jalr x0, 0(t0)" // Jump and link register:
-        : : "r" (address) : "t0" // Input operand (address in a register), clobbered register (t0)
-    );
+  __asm volatile(
+      "mv t0, %0\n"     // Move the address into a temporary register (t0)
+      "jalr x0, 0(t0)"  // Jump and link register:
+      :
+      : "r"(address)
+      : "t0"  // Input operand (address in a register), clobbered register (t0)
+  );
 
   // // Result buffer.
   // uint32_t res_values[13];
@@ -1317,10 +1317,7 @@ status_t handle_ibex_fi_char_flash_read(ujson_t *uj)  {
 
   // LOG_INFO("STARTING");
 
-  
-
   // my_function();
-
 
   LOG_INFO("STOPPING");
   // Get registered alerts from alert handler.
