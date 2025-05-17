@@ -45,6 +45,7 @@ extern "C" {
     value(_, CharSramStatic) \
     value(_, CharSramWrite) \
     value(_, CharSramWriteRead) \
+    value(_, CharSramWriteReadAlt) \
     value(_, CharSramWriteStaticUnrolled) \
     value(_, CharUncondBranch) \
     value(_, CharUncondBranchNop) \
@@ -166,6 +167,14 @@ UJSON_SERDE_STRUCT(IbexFiTestResultCombi1, ibex_fi_test_result_combi_1_t, IBEXFI
     field(alerts, uint32_t, 3) \
     field(ast_alerts, uint32_t, 2)
 UJSON_SERDE_STRUCT(IbexFiTestResultCombi3, ibex_fi_test_result_combi_3_t, IBEXFI_TEST_RESULT_COMBI_3);
+
+#define IBEXFI_FAULTY_SRAM_WRITE_READ_OUTPUT(field, string) \
+    field(memory, uint32_t, 16) \
+    field(registers, uint32_t, 32) \
+    field(err_status, uint32_t) \
+    field(alerts, uint32_t, 3) \
+    field(ast_alerts, uint32_t, 2)
+UJSON_SERDE_STRUCT(IbexFiFaultySramWriteReadOutput, ibex_fi_faulty_sram_write_read_output_t, IBEXFI_FAULTY_SRAM_WRITE_READ_OUTPUT);
 
 // clang-format on
 
