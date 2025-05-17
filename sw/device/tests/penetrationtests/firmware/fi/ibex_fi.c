@@ -3354,6 +3354,350 @@ status_t handle_ibex_fi_otp_read_lock(ujson_t *uj) {
   return OK_STATUS();
 }
 
+
+status_t handle_ibex_fi_char_combi(ujson_t *uj)
+    __attribute__((optnone)) {
+
+  //////////// TEST 1
+
+  // Clear registered alerts in alert handler.
+  pentest_registered_alerts_t reg_alerts = pentest_get_triggered_alerts();
+  // Clear the AST recoverable alerts.
+  pentest_clear_sensor_recov_alerts();
+
+  uint32_t res_values[13];
+
+  asm volatile("addi x5, x0, 0xaf");
+  asm volatile("addi x6, x0, 0xaf");
+  
+  asm volatile("addi x12, x0, 0xa0");
+  asm volatile("addi x13, x0, 0x0f");
+
+  asm volatile("addi x14, x0, 0x01");
+  asm volatile("addi x15, x0, 0x03");
+
+  asm volatile("addi x16, x0, 0x0a");
+  asm volatile("addi x17, x0, 0x1c");
+
+  asm volatile("addi x28, x0, 0xa2");
+  asm volatile("addi x29, x0, 0x05");
+
+  asm volatile("addi x30, x0, 0xc4");
+  asm volatile("addi x31, x0, 0x07");
+
+  asm volatile("addi x7, x0, 0");
+
+  // FI code target.
+  PENTEST_ASM_TRIGGER_HIGH
+  asm volatile(
+    "bne x5, x6, endcombifaultybne\n"
+    "bne x5, x6, endcombifaultybne\n"
+    "bne x5, x6, endcombifaultybne\n"
+    "bne x5, x6, endcombifaultybne\n"
+    "bne x5, x6, endcombifaultybne\n"
+    "bne x5, x6, endcombifaultybne\n"
+
+    "beq x12, x13, endcombifaultybeq\n"
+    "beq x12, x13, endcombifaultybeq\n"
+    "beq x12, x13, endcombifaultybeq\n"
+    "beq x12, x13, endcombifaultybeq\n"
+    "beq x12, x13, endcombifaultybeq\n"
+    "beq x12, x13, endcombifaultybeq\n"
+
+    "bge x14, x15, endcombifaultybge\n"
+    "bge x14, x15, endcombifaultybge\n"
+    "bge x14, x15, endcombifaultybge\n"
+    "bge x14, x15, endcombifaultybge\n"
+    "bge x14, x15, endcombifaultybge\n"
+    "bge x14, x15, endcombifaultybge\n"
+
+    "bgeu x16, x17, endcombifaultybgeu\n"
+    "bgeu x16, x17, endcombifaultybgeu\n"
+    "bgeu x16, x17, endcombifaultybgeu\n"
+    "bgeu x16, x17, endcombifaultybgeu\n"
+    "bgeu x16, x17, endcombifaultybgeu\n"
+    "bgeu x16, x17, endcombifaultybgeu\n"
+
+    "blt x28, x29, endcombifaultyblt\n"
+    "blt x28, x29, endcombifaultyblt\n"
+    "blt x28, x29, endcombifaultyblt\n"
+    "blt x28, x29, endcombifaultyblt\n"
+    "blt x28, x29, endcombifaultyblt\n"
+    "blt x28, x29, endcombifaultyblt\n"
+
+    "bltu x30, x31, endcombifaultybltu\n"
+    "bltu x30, x31, endcombifaultybltu\n"
+    "bltu x30, x31, endcombifaultybltu\n"
+    "bltu x30, x31, endcombifaultybltu\n"
+    "bltu x30, x31, endcombifaultybltu\n"
+    "bltu x30, x31, endcombifaultybltu\n"
+
+    NOP100
+
+    "j endcombicorrect\n"
+
+    "endcombifaultybne:\n"
+    "addi x5, x5, 0x1\n"
+    "addi x6, x6, 0x1\n"
+    "j endcombicorrect\n"
+
+    "endcombifaultybeq:\n"
+    "addi x12, x12, 0x1\n"
+    "addi x13, x13, 0x1\n"
+    "j endcombicorrect\n"
+
+    "endcombifaultybge:\n"
+    "addi x14, x14, 0x1\n"
+    "addi x15, x15, 0x1\n"
+    "j endcombicorrect\n"
+
+    "endcombifaultybgeu:\n"
+    "addi x16, x16, 0x1\n"
+    "addi x17, x17, 0x1\n"
+    "j endcombicorrect\n"
+
+    "endcombifaultyblt:\n"
+    "addi x28, x28, 0x1\n"
+    "addi x29, x29, 0x1\n"
+    "j endcombicorrect\n"
+
+    "endcombifaultybltu:\n"
+    "addi x30, x30, 0x1\n"
+    "addi x31, x31, 0x1\n"
+
+    "endcombicorrect:\n"
+  );
+  PENTEST_ASM_TRIGGER_LOW
+
+  read_regs(res_values);
+
+  // Get registered alerts from alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Get fatal and recoverable AST alerts from sensor controller.
+  pentest_sensor_alerts_t sensor_alerts = pentest_get_sensor_alerts();
+
+  // Read ERR_STATUS register.
+  dif_rv_core_ibex_error_status_t codes_1;
+  TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes_1));
+
+  // Send loop counters & ERR_STATUS to host.
+  ibex_fi_test_result_combi_1_t uj_output_1;
+  uj_output_1.registers[0] = res_values[0];
+  uj_output_1.registers[1] = res_values[1];
+  for (int i = 0; i < 10; i++) {
+    uj_output_1.registers[i+2] = res_values[i+3];
+  }
+  uj_output_1.err_status = codes_1;
+  memcpy(uj_output_1.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
+  memcpy(uj_output_1.ast_alerts, sensor_alerts.alerts,
+         sizeof(sensor_alerts.alerts));
+  RESP_OK(ujson_serialize_ibex_fi_test_result_combi_1_t, uj, &uj_output_1);
+
+  //////////////// TEST 2
+
+  // Clear registered alerts in alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Clear the AST recoverable alerts.
+  pentest_clear_sensor_recov_alerts();
+
+  // Values are intentially not equal.
+  hardened_bool_t value1 = HARDENED_BOOL_TRUE;
+  hardened_bool_t value2 = HARDENED_BOOL_TRUE;
+
+  uint32_t result1 = 0;
+  uint32_t result2 = 0;
+
+  asm volatile("addi x5, x0, 0");
+  asm volatile("addi x6, x0, 0");
+
+  PENTEST_ASM_TRIGGER_HIGH
+  // asm volatile(
+  //   "beq" " %0, %1, .L_HARDENED_%=;" \
+  //   ".RES_%=: addi x5, x5, 1;" \
+  //   "bne" " %0, %1, .RES_%=;" \
+  //   ".L_HARDENED_%=:;"::"r"(value1), "r"(value2)
+  // );
+  // asm volatile(
+  //   "beq" " %0, %1, .L_HARDENED_%=;" \
+  //   ".RES_%=: addi x5, x5, 1;" \
+  //   "bne" " %0, %1, .RES_%=;" \
+  //   ".L_HARDENED_%=:;"::"r"(value1), "r"(value2)
+  // );
+  // asm volatile(
+  //   "beq" " %0, %1, .L_HARDENED_%=;" \
+  //   ".RES_%=: addi x5, x5, 1;" \
+  //   "bne" " %0, %1, .RES_%=;" \
+  //   ".L_HARDENED_%=:;"::"r"(value1), "r"(value2)
+  // );
+
+  asm volatile("beq" " %0, %1, .L_HARDENED_%=;" \
+    "addi x6, x6, 1;" \
+    ".L_HARDENED_%=:;"::"r"(value1), "r"(value2) );
+  asm volatile("beq" " %0, %1, .L_HARDENED_%=;" \
+    "addi x6, x6, 1;" \
+    ".L_HARDENED_%=:;"::"r"(value1), "r"(value2) );
+  asm volatile("beq" " %0, %1, .L_HARDENED_%=;" \
+    "addi x6, x6, 1;" \
+    ".L_HARDENED_%=:;"::"r"(value1), "r"(value2) );
+  PENTEST_ASM_TRIGGER_LOW
+
+  asm volatile("mv %0, x5" : "=r"(result1));
+  asm volatile("mv %0, x6" : "=r"(result2));
+
+  // Get registered alerts from alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Get fatal and recoverable AST alerts from sensor controller.
+  sensor_alerts = pentest_get_sensor_alerts();
+
+  // Read ERR_STATUS register.
+  dif_rv_core_ibex_error_status_t codes_2;
+  TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes_2));
+
+  ibex_fi_test_result_mult_t uj_output_2;
+  uj_output_2.err_status = codes_2;
+  uj_output_2.result1 = result1;
+  uj_output_2.result2 = result2;
+  memcpy(uj_output_2.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
+  memcpy(uj_output_2.ast_alerts, sensor_alerts.alerts,
+         sizeof(sensor_alerts.alerts));
+  RESP_OK(ujson_serialize_ibex_fi_test_result_mult_t, uj, &uj_output_2);
+
+
+  //////////////// TEST 3
+
+  // Clear registered alerts in alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Clear the AST recoverable alerts.
+  pentest_clear_sensor_recov_alerts();
+
+  uint32_t loop_counter = 0;
+
+  uint32_t res_values_2[13];
+
+  asm volatile("addi x5, x0, 0");
+  asm volatile("addi x6, x0, 0");
+  asm volatile("addi x7, x0, 0");
+  asm volatile("addi x12, x0, 0");
+  asm volatile("addi x13, x0, 0");
+  asm volatile("addi x14, x0, 0");
+  asm volatile("addi x15, x0, 0");
+  asm volatile("addi x16, x0, 0");
+  asm volatile("addi x17, x0, 0");
+  asm volatile("addi x28, x0, 0");
+  asm volatile("addi x29, x0, 0");
+  asm volatile("addi x30, x0, 0");
+  asm volatile("addi x31, x0, 0");
+
+  // FI code target.
+  PENTEST_ASM_TRIGGER_HIGH
+  asm volatile(
+    "lw x5, (%0)\n addi x5, x5, 1\n sw x5, (%0)\n"
+    "lw x6, (%0)\n addi x6, x6, 1\n sw x6, (%0)\n"
+    "lw x7, (%0)\n addi x7, x7, 1\n sw x7, (%0)\n"
+    "lw x12, (%0)\n addi x12, x12, 1\n sw x12, (%0)\n"
+    "lw x13, (%0)\n addi x13, x13, 1\n sw x13, (%0)\n"
+    "lw x14, (%0)\n addi x14, x14, 1\n sw x14, (%0)\n"
+    "lw x15, (%0)\n addi x15, x15, 1\n sw x15, (%0)\n"
+    "lw x16, (%0)\n addi x16, x16, 1\n sw x16, (%0)\n"
+    "lw x17, (%0)\n addi x17, x17, 1\n sw x17, (%0)\n"
+    "lw x28, (%0)\n addi x28, x28, 1\n sw x28, (%0)\n"
+    "lw x29, (%0)\n addi x29, x29, 1\n sw x29, (%0)\n"
+    "lw x30, (%0)\n addi x30, x30, 1\n sw x30, (%0)\n"
+    "lw x31, (%0)\n addi x31, x31, 1\n sw x31, (%0)\n"
+    : : "r"((uint32_t *)&loop_counter)
+  );
+  PENTEST_ASM_TRIGGER_LOW
+  read_regs(res_values_2);
+
+  // Get registered alerts from alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Get fatal and recoverable AST alerts from sensor controller.
+  sensor_alerts = pentest_get_sensor_alerts();
+
+  // Read ERR_STATUS register.
+  dif_rv_core_ibex_error_status_t codes_3;
+  TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes_3));
+
+  // Send loop counter & ERR_STATUS to host.
+  ibex_fi_test_result_combi_3_t uj_output_3;
+  uj_output_3.loop_counter = loop_counter;
+  for (int i = 0; i < 13; i++) {
+    uj_output_3.registers[i] = res_values_2[i];
+  }
+  uj_output_3.err_status = codes_3;
+  memcpy(uj_output_3.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
+  memcpy(uj_output_3.ast_alerts, sensor_alerts.alerts,
+         sizeof(sensor_alerts.alerts));
+  RESP_OK(ujson_serialize_ibex_fi_test_result_combi_3_t, uj, &uj_output_3);
+
+
+  ////////// TEST 4
+
+  // Clear registered alerts in alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Clear the AST recoverable alerts.
+  pentest_clear_sensor_recov_alerts();
+
+  uint32_t result = 0;
+  // Init x5 register we are using for the increment.
+  asm volatile(INITX5);
+
+  // FI code target.
+  PENTEST_ASM_TRIGGER_HIGH
+  // Attack target.
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  asm volatile("jal ra, not_increment_counter");
+  PENTEST_ASM_TRIGGER_LOW
+  asm volatile("mv %0, x5" : "=r"(result));
+
+  // Get registered alerts from alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Get fatal and recoverable AST alerts from sensor controller.
+  sensor_alerts = pentest_get_sensor_alerts();
+
+  // Read ERR_STATUS register.
+  dif_rv_core_ibex_error_status_t codes_4;
+  TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes_4));
+
+  // Send loop counters & ERR_STATUS to host.
+  ibex_fi_test_result_t uj_output_4;
+  uj_output_4.result = result;
+  uj_output_4.err_status = codes_4;
+  memcpy(uj_output_4.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
+  memcpy(uj_output_4.ast_alerts, sensor_alerts.alerts,
+         sizeof(sensor_alerts.alerts));
+  RESP_OK(ujson_serialize_ibex_fi_test_result_t, uj, &uj_output_4);
+
+
+  return OK_STATUS();
+}
+
 status_t handle_ibex_fi(ujson_t *uj) {
   ibex_fi_subcommand_t cmd;
   TRY(ujson_deserialize_ibex_fi_subcommand_t(uj, &cmd));
@@ -3442,6 +3786,8 @@ status_t handle_ibex_fi(ujson_t *uj) {
       return handle_ibex_fi_otp_data_read(uj);
     case kIbexFiSubcommandOtpReadLock:
       return handle_ibex_fi_otp_read_lock(uj);
+    case kIbexFiSubcommandCharCombi:
+      return handle_ibex_fi_char_combi(uj);
     default:
       LOG_ERROR("Unrecognized IBEX FI subcommand: %d", cmd);
       return INVALID_ARGUMENT();
