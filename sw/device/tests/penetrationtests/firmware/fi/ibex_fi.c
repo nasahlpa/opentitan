@@ -2848,7 +2848,8 @@ status_t handle_ibex_fi_char_sram_write_read_alt(ujson_t *uj) {
   memcpy(uj_output.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
   memcpy(uj_output.ast_alerts, sensor_alerts.alerts,
          sizeof(sensor_alerts.alerts));
-  RESP_OK(ujson_serialize_ibex_fi_faulty_sram_write_read_output_t, uj, &uj_output);
+  RESP_OK(ujson_serialize_ibex_fi_faulty_sram_write_read_output_t, uj,
+          &uj_output);
   return OK_STATUS();
 }
 
@@ -3447,10 +3448,7 @@ status_t handle_ibex_fi_otp_read_lock(ujson_t *uj) {
   return OK_STATUS();
 }
 
-
-status_t handle_ibex_fi_char_combi(ujson_t *uj)
-    __attribute__((optnone)) {
-
+status_t handle_ibex_fi_char_combi(ujson_t *uj) __attribute__((optnone)) {
   //////////// TEST 1
 
   // Clear registered alerts in alert handler.
@@ -3462,7 +3460,7 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
 
   asm volatile("addi x5, x0, 0xaf");
   asm volatile("addi x6, x0, 0xaf");
-  
+
   asm volatile("addi x12, x0, 0xa0");
   asm volatile("addi x13, x0, 0x0f");
 
@@ -3483,83 +3481,82 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   // FI code target.
   PENTEST_ASM_TRIGGER_HIGH
   asm volatile(
-    "bne x5, x6, endcombifaultybne\n"
-    "bne x5, x6, endcombifaultybne\n"
-    "bne x5, x6, endcombifaultybne\n"
-    "bne x5, x6, endcombifaultybne\n"
-    "bne x5, x6, endcombifaultybne\n"
-    "bne x5, x6, endcombifaultybne\n"
+      "bne x5, x6, endcombifaultybne\n"
+      "bne x5, x6, endcombifaultybne\n"
+      "bne x5, x6, endcombifaultybne\n"
+      "bne x5, x6, endcombifaultybne\n"
+      "bne x5, x6, endcombifaultybne\n"
+      "bne x5, x6, endcombifaultybne\n"
 
-    "beq x12, x13, endcombifaultybeq\n"
-    "beq x12, x13, endcombifaultybeq\n"
-    "beq x12, x13, endcombifaultybeq\n"
-    "beq x12, x13, endcombifaultybeq\n"
-    "beq x12, x13, endcombifaultybeq\n"
-    "beq x12, x13, endcombifaultybeq\n"
+      "beq x12, x13, endcombifaultybeq\n"
+      "beq x12, x13, endcombifaultybeq\n"
+      "beq x12, x13, endcombifaultybeq\n"
+      "beq x12, x13, endcombifaultybeq\n"
+      "beq x12, x13, endcombifaultybeq\n"
+      "beq x12, x13, endcombifaultybeq\n"
 
-    "bge x14, x15, endcombifaultybge\n"
-    "bge x14, x15, endcombifaultybge\n"
-    "bge x14, x15, endcombifaultybge\n"
-    "bge x14, x15, endcombifaultybge\n"
-    "bge x14, x15, endcombifaultybge\n"
-    "bge x14, x15, endcombifaultybge\n"
+      "bge x14, x15, endcombifaultybge\n"
+      "bge x14, x15, endcombifaultybge\n"
+      "bge x14, x15, endcombifaultybge\n"
+      "bge x14, x15, endcombifaultybge\n"
+      "bge x14, x15, endcombifaultybge\n"
+      "bge x14, x15, endcombifaultybge\n"
 
-    "bgeu x16, x17, endcombifaultybgeu\n"
-    "bgeu x16, x17, endcombifaultybgeu\n"
-    "bgeu x16, x17, endcombifaultybgeu\n"
-    "bgeu x16, x17, endcombifaultybgeu\n"
-    "bgeu x16, x17, endcombifaultybgeu\n"
-    "bgeu x16, x17, endcombifaultybgeu\n"
+      "bgeu x16, x17, endcombifaultybgeu\n"
+      "bgeu x16, x17, endcombifaultybgeu\n"
+      "bgeu x16, x17, endcombifaultybgeu\n"
+      "bgeu x16, x17, endcombifaultybgeu\n"
+      "bgeu x16, x17, endcombifaultybgeu\n"
+      "bgeu x16, x17, endcombifaultybgeu\n"
 
-    "blt x28, x29, endcombifaultyblt\n"
-    "blt x28, x29, endcombifaultyblt\n"
-    "blt x28, x29, endcombifaultyblt\n"
-    "blt x28, x29, endcombifaultyblt\n"
-    "blt x28, x29, endcombifaultyblt\n"
-    "blt x28, x29, endcombifaultyblt\n"
+      "blt x28, x29, endcombifaultyblt\n"
+      "blt x28, x29, endcombifaultyblt\n"
+      "blt x28, x29, endcombifaultyblt\n"
+      "blt x28, x29, endcombifaultyblt\n"
+      "blt x28, x29, endcombifaultyblt\n"
+      "blt x28, x29, endcombifaultyblt\n"
 
-    "bltu x30, x31, endcombifaultybltu\n"
-    "bltu x30, x31, endcombifaultybltu\n"
-    "bltu x30, x31, endcombifaultybltu\n"
-    "bltu x30, x31, endcombifaultybltu\n"
-    "bltu x30, x31, endcombifaultybltu\n"
-    "bltu x30, x31, endcombifaultybltu\n"
+      "bltu x30, x31, endcombifaultybltu\n"
+      "bltu x30, x31, endcombifaultybltu\n"
+      "bltu x30, x31, endcombifaultybltu\n"
+      "bltu x30, x31, endcombifaultybltu\n"
+      "bltu x30, x31, endcombifaultybltu\n"
+      "bltu x30, x31, endcombifaultybltu\n"
 
-    NOP100
+      NOP100
 
-    "j endcombicorrect\n"
+      "j endcombicorrect\n"
 
-    "endcombifaultybne:\n"
-    "addi x5, x5, 0x1\n"
-    "addi x6, x6, 0x1\n"
-    "j endcombicorrect\n"
+      "endcombifaultybne:\n"
+      "addi x5, x5, 0x1\n"
+      "addi x6, x6, 0x1\n"
+      "j endcombicorrect\n"
 
-    "endcombifaultybeq:\n"
-    "addi x12, x12, 0x1\n"
-    "addi x13, x13, 0x1\n"
-    "j endcombicorrect\n"
+      "endcombifaultybeq:\n"
+      "addi x12, x12, 0x1\n"
+      "addi x13, x13, 0x1\n"
+      "j endcombicorrect\n"
 
-    "endcombifaultybge:\n"
-    "addi x14, x14, 0x1\n"
-    "addi x15, x15, 0x1\n"
-    "j endcombicorrect\n"
+      "endcombifaultybge:\n"
+      "addi x14, x14, 0x1\n"
+      "addi x15, x15, 0x1\n"
+      "j endcombicorrect\n"
 
-    "endcombifaultybgeu:\n"
-    "addi x16, x16, 0x1\n"
-    "addi x17, x17, 0x1\n"
-    "j endcombicorrect\n"
+      "endcombifaultybgeu:\n"
+      "addi x16, x16, 0x1\n"
+      "addi x17, x17, 0x1\n"
+      "j endcombicorrect\n"
 
-    "endcombifaultyblt:\n"
-    "addi x28, x28, 0x1\n"
-    "addi x29, x29, 0x1\n"
-    "j endcombicorrect\n"
+      "endcombifaultyblt:\n"
+      "addi x28, x28, 0x1\n"
+      "addi x29, x29, 0x1\n"
+      "j endcombicorrect\n"
 
-    "endcombifaultybltu:\n"
-    "addi x30, x30, 0x1\n"
-    "addi x31, x31, 0x1\n"
+      "endcombifaultybltu:\n"
+      "addi x30, x30, 0x1\n"
+      "addi x31, x31, 0x1\n"
 
-    "endcombicorrect:\n"
-  );
+      "endcombicorrect:\n");
   PENTEST_ASM_TRIGGER_LOW
 
   read_regs(res_values);
@@ -3578,7 +3575,7 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   uj_output_1.registers[0] = res_values[0];
   uj_output_1.registers[1] = res_values[1];
   for (int i = 0; i < 10; i++) {
-    uj_output_1.registers[i+2] = res_values[i+3];
+    uj_output_1.registers[i + 2] = res_values[i + 3];
   }
   uj_output_1.err_status = codes_1;
   memcpy(uj_output_1.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
@@ -3623,15 +3620,24 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   //   ".L_HARDENED_%=:;"::"r"(value1), "r"(value2)
   // );
 
-  asm volatile("beq" " %0, %1, .L_HARDENED_%=;" \
-    "addi x6, x6, 1;" \
-    ".L_HARDENED_%=:;"::"r"(value1), "r"(value2) );
-  asm volatile("beq" " %0, %1, .L_HARDENED_%=;" \
-    "addi x6, x6, 1;" \
-    ".L_HARDENED_%=:;"::"r"(value1), "r"(value2) );
-  asm volatile("beq" " %0, %1, .L_HARDENED_%=;" \
-    "addi x6, x6, 1;" \
-    ".L_HARDENED_%=:;"::"r"(value1), "r"(value2) );
+  asm volatile(
+      "beq"
+      " %0, %1, .L_HARDENED_%=;"
+      "addi x6, x6, 1;"
+      ".L_HARDENED_%=:;" ::"r"(value1),
+      "r"(value2));
+  asm volatile(
+      "beq"
+      " %0, %1, .L_HARDENED_%=;"
+      "addi x6, x6, 1;"
+      ".L_HARDENED_%=:;" ::"r"(value1),
+      "r"(value2));
+  asm volatile(
+      "beq"
+      " %0, %1, .L_HARDENED_%=;"
+      "addi x6, x6, 1;"
+      ".L_HARDENED_%=:;" ::"r"(value1),
+      "r"(value2));
   PENTEST_ASM_TRIGGER_LOW
 
   asm volatile("mv %0, x5" : "=r"(result1));
@@ -3654,7 +3660,6 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   memcpy(uj_output_2.ast_alerts, sensor_alerts.alerts,
          sizeof(sensor_alerts.alerts));
   RESP_OK(ujson_serialize_ibex_fi_test_result_mult_t, uj, &uj_output_2);
-
 
   //////////////// TEST 3
 
@@ -3684,21 +3689,21 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   // FI code target.
   PENTEST_ASM_TRIGGER_HIGH
   asm volatile(
-    "lw x5, (%0)\n addi x5, x5, 1\n sw x5, (%0)\n"
-    "lw x6, (%0)\n addi x6, x6, 1\n sw x6, (%0)\n"
-    "lw x7, (%0)\n addi x7, x7, 1\n sw x7, (%0)\n"
-    "lw x12, (%0)\n addi x12, x12, 1\n sw x12, (%0)\n"
-    "lw x13, (%0)\n addi x13, x13, 1\n sw x13, (%0)\n"
-    "lw x14, (%0)\n addi x14, x14, 1\n sw x14, (%0)\n"
-    "lw x15, (%0)\n addi x15, x15, 1\n sw x15, (%0)\n"
-    "lw x16, (%0)\n addi x16, x16, 1\n sw x16, (%0)\n"
-    "lw x17, (%0)\n addi x17, x17, 1\n sw x17, (%0)\n"
-    "lw x28, (%0)\n addi x28, x28, 1\n sw x28, (%0)\n"
-    "lw x29, (%0)\n addi x29, x29, 1\n sw x29, (%0)\n"
-    "lw x30, (%0)\n addi x30, x30, 1\n sw x30, (%0)\n"
-    "lw x31, (%0)\n addi x31, x31, 1\n sw x31, (%0)\n"
-    : : "r"((uint32_t *)&loop_counter)
-  );
+      "lw x5, (%0)\n addi x5, x5, 1\n sw x5, (%0)\n"
+      "lw x6, (%0)\n addi x6, x6, 1\n sw x6, (%0)\n"
+      "lw x7, (%0)\n addi x7, x7, 1\n sw x7, (%0)\n"
+      "lw x12, (%0)\n addi x12, x12, 1\n sw x12, (%0)\n"
+      "lw x13, (%0)\n addi x13, x13, 1\n sw x13, (%0)\n"
+      "lw x14, (%0)\n addi x14, x14, 1\n sw x14, (%0)\n"
+      "lw x15, (%0)\n addi x15, x15, 1\n sw x15, (%0)\n"
+      "lw x16, (%0)\n addi x16, x16, 1\n sw x16, (%0)\n"
+      "lw x17, (%0)\n addi x17, x17, 1\n sw x17, (%0)\n"
+      "lw x28, (%0)\n addi x28, x28, 1\n sw x28, (%0)\n"
+      "lw x29, (%0)\n addi x29, x29, 1\n sw x29, (%0)\n"
+      "lw x30, (%0)\n addi x30, x30, 1\n sw x30, (%0)\n"
+      "lw x31, (%0)\n addi x31, x31, 1\n sw x31, (%0)\n"
+      :
+      : "r"((uint32_t *)&loop_counter));
   PENTEST_ASM_TRIGGER_LOW
   read_regs(res_values_2);
 
@@ -3722,7 +3727,6 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   memcpy(uj_output_3.ast_alerts, sensor_alerts.alerts,
          sizeof(sensor_alerts.alerts));
   RESP_OK(ujson_serialize_ibex_fi_test_result_combi_3_t, uj, &uj_output_3);
-
 
   ////////// TEST 4
 
@@ -3786,7 +3790,6 @@ status_t handle_ibex_fi_char_combi(ujson_t *uj)
   memcpy(uj_output_4.ast_alerts, sensor_alerts.alerts,
          sizeof(sensor_alerts.alerts));
   RESP_OK(ujson_serialize_ibex_fi_test_result_t, uj, &uj_output_4);
-
 
   return OK_STATUS();
 }
