@@ -11,7 +11,6 @@
 #include "sw/device/lib/crypto/impl/integrity.h"
 #include "sw/device/lib/crypto/impl/keyblob.h"
 #include "sw/device/lib/crypto/impl/status.h"
-#include "sw/device/lib/crypto/drivers/entropy.h"
 #include "sw/device/lib/crypto/include/datatypes.h"
 #include "sw/device/lib/crypto/include/drbg.h"
 
@@ -48,13 +47,8 @@ otcrypto_status_t otcrypto_symmetric_keygen(
   };
 
   // Randomize the memory before writing the shares.
-<<<<<<< HEAD
   HARDENED_TRY(hardened_memshred(share0_buf.data, share0_buf.len));
   HARDENED_TRY(hardened_memshred(share1_buf.data, share1_buf.len));
-=======
-  hardened_memshred(share0_buf.data, share0_buf.len);
-  hardened_memshred(share1_buf.data, share1_buf.len);
->>>>>>> beb00a033b ([crypto] Randomize memory before generating symmetric keys.)
 
   // Construct an empty buffer for the "additional input" to the DRBG generate
   // function.
