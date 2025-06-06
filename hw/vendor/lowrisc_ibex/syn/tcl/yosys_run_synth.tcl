@@ -24,11 +24,16 @@ if { $lr_synth_ibex_writeback_stage } {
   yosys "chparam -set WritebackStage 1 $lr_synth_top_module"
 }
 
-yosys "chparam -set RV32B $lr_synth_ibex_bitmanip $lr_synth_top_module"
+#yosys "chparam -set RV32B $lr_synth_ibex_bitmanip $lr_synth_top_module"
 
-yosys "chparam -set RV32M $lr_synth_ibex_multiplier $lr_synth_top_module"
+#yosys "chparam -set RV32M $lr_synth_ibex_multiplier $lr_synth_top_module"
 
-yosys "chparam -set RegFile $lr_synth_ibex_regfile $lr_synth_top_module"
+#yosys "chparam -set RegFile $lr_synth_ibex_regfile $lr_synth_top_module"
+
+yosys "chparam -set DataWidth 39 $lr_synth_top_module"
+yosys "chparam -set DummyInstructions 1 $lr_synth_top_module"
+yosys "chparam -set WrenCheck 1 $lr_synth_top_module"
+yosys "chparam -set RdataMuxCheck 1 $lr_synth_top_module"
 
 yosys "synth $flatten_opt -top $lr_synth_top_module"
 yosys "opt -purge"

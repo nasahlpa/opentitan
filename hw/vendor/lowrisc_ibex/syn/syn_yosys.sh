@@ -33,8 +33,12 @@ source syn_setup.sh
 #-------------------------------------------------------------------------
 
 LR_DEP_SOURCES=(
-    "../vendor/lowrisc_ip/ip/prim_generic/rtl/prim_generic_buf.sv"
-    "../vendor/lowrisc_ip/ip/prim_generic/rtl/prim_generic_flop.sv"
+    "../../../ip/prim_generic/rtl/prim_generic_buf.sv"
+    "../../../ip/prim_generic/rtl/prim_generic_flop.sv"
+    "../../../ip/prim_generic/rtl/prim_generic_and2.sv"
+    "../../../ip/prim/rtl/prim_onehot_mux.sv"
+    "../../../ip/prim/rtl/prim_onehot_check.sv"
+    "../../../ip/prim/rtl/prim_onehot_enc.sv"
 )
 
 mkdir -p "$LR_SYNTH_OUT_DIR/generated"
@@ -47,9 +51,13 @@ for file in "${LR_DEP_SOURCES[@]}"; do
 
     sv2v \
         --define=SYNTHESIS --define=YOSYS \
-        -I../vendor/lowrisc_ip/ip/prim/rtl \
+        -I../../../ip/prim/rtl \
         "$file" \
         > "$LR_SYNTH_OUT_DIR"/generated/"${module}".v
+
+    # Make sure auto-generated primitives are resolved to generic primitives
+    # where available.
+    sed -i 's/prim_and2/prim_generic_and2/g' "$LR_SYNTH_OUT_DIR"/generated/"${module}".v
 done
 
 # Convert core sources
@@ -64,10 +72,10 @@ for file in ../rtl/*.sv; do
   sv2v \
     --define=SYNTHESIS --define=YOSYS \
     ../rtl/*_pkg.sv \
-    ../vendor/lowrisc_ip/ip/prim/rtl/prim_ram_1p_pkg.sv \
-    ../vendor/lowrisc_ip/ip/prim/rtl/prim_secded_pkg.sv \
-    -I../vendor/lowrisc_ip/ip/prim/rtl \
-    -I../vendor/lowrisc_ip/dv/sv/dv_utils \
+    ../../../ip/prim/rtl/prim_ram_1p_pkg.sv \
+    ../../../ip/prim/rtl/prim_secded_pkg.sv \
+    -I../../../ip/prim/rtl \
+    -I../../../dv/sv/dv_utils \
     "$file" \
     > "$LR_SYNTH_OUT_DIR"/generated/"${module}".v
 
@@ -82,7 +90,6 @@ rm -f "$LR_SYNTH_OUT_DIR"/generated/ibex_tracer.v
 
 # remove the FPGA & register-based register file (because we will use the
 # latch-based one instead)
-rm -f "$LR_SYNTH_OUT_DIR"/generated/ibex_register_file_ff.v
 rm -f "$LR_SYNTH_OUT_DIR"/generated/ibex_register_file_fpga.v
 
 yosys -c ./tcl/yosys_run_synth.tcl |& teelog syn || {
