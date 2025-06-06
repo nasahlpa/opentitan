@@ -137,6 +137,7 @@ module ibex_register_file_ff #(
     // Encode raddr_a/b into one-hot encoded signals.
     logic [NUM_WORDS-1:0] raddr_onehot_a, raddr_onehot_b;
     logic [NUM_WORDS-1:0] raddr_onehot_a_buf, raddr_onehot_b_buf;
+    logic [4:0] raddr_a_i_buf, raddr_b_i_buf;
     prim_onehot_enc #(
       .OneHotWidth(NUM_WORDS)
     ) u_prim_onehot_enc_raddr_a (
@@ -169,6 +170,20 @@ module ibex_register_file_ff #(
       .out_o(raddr_onehot_b_buf)
     );
 
+    prim_buf #(
+      .Width(5)
+    ) u_prim_buf_raddr_a_i (
+      .in_i (raddr_a_i),
+      .out_o(raddr_a_i_buf)
+    );
+
+    prim_buf #(
+      .Width(5)
+    ) u_prim_buf_raddr_b_i (
+      .in_i (raddr_b_i),
+      .out_o(raddr_b_i_buf)
+    );
+
     // SEC_CM: DATA_REG_SW.GLITCH_DETECT
     // Check the one-hot encoded signals for glitches.
     prim_onehot_check #(
@@ -181,7 +196,7 @@ module ibex_register_file_ff #(
       .clk_i,
       .rst_ni,
       .oh_i   (raddr_onehot_a_buf),
-      .addr_i (raddr_a_i),
+      .addr_i (raddr_a_i_buf),
       // Set enable=1 as address is always valid.
       .en_i   (1'b1),
       .err_o  (oh_raddr_a_err)
@@ -197,7 +212,7 @@ module ibex_register_file_ff #(
       .clk_i,
       .rst_ni,
       .oh_i   (raddr_onehot_b_buf),
-      .addr_i (raddr_b_i),
+      .addr_i (raddr_b_i_buf),
       // Set enable=1 as address is always valid.
       .en_i   (1'b1),
       .err_o  (oh_raddr_b_err)
