@@ -64,6 +64,7 @@ module ibex_register_file_ff #(
     // Buffer the decoded write enable bits so that the checker
     // is not optimized into the address decoding logic.
     logic [NUM_WORDS-1:0] we_a_dec_buf;
+    (* keep_hierarchy *)
     prim_buf #(
       .Width(NUM_WORDS)
     ) u_prim_buf (
@@ -156,6 +157,7 @@ module ibex_register_file_ff #(
 
     // Buffer the one-hot encoded signals so that the checkers
     // are not optimized.
+    (* keep_hierarchy *)
     prim_buf #(
       .Width(NUM_WORDS)
     ) u_prim_buf_raddr_a (
@@ -163,6 +165,7 @@ module ibex_register_file_ff #(
       .out_o(raddr_onehot_a_buf)
     );
 
+    (* keep_hierarchy *)
     prim_buf #(
       .Width(NUM_WORDS)
     ) u_prim_buf_raddr_b (
@@ -170,6 +173,7 @@ module ibex_register_file_ff #(
       .out_o(raddr_onehot_b_buf)
     );
 
+    (* keep_hierarchy *)
     prim_buf #(
       .Width(5)
     ) u_prim_buf_raddr_a_i (
@@ -177,6 +181,7 @@ module ibex_register_file_ff #(
       .out_o(raddr_a_i_buf)
     );
 
+    (* keep_hierarchy *)
     prim_buf #(
       .Width(5)
     ) u_prim_buf_raddr_b_i (
