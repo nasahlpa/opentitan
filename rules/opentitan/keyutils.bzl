@@ -46,8 +46,8 @@ key_sphincs_plus = rule(
             doc = "The config properties of the key.  `domain` can be `Pure` or `PreHashedSha256`.",
         ),
         "method": attr.string(
-            doc = "Mechanism used to access the key. Can be local or hsmtool.",
-            values = ["local", "hsmtool"],
+            doc = "Mechanism used to access the key. Can be local or hsmtool or kss.",
+            values = ["local", "hsmtool", "kss"],
         ),
     },
 )
@@ -79,8 +79,8 @@ key_ecdsa = rule(
         # $XDG_CONFIG_HOME/hsmtool/profiles.json that refers to the user's
         # physical token name and credentials.
         "method": attr.string(
-            doc = "Mechanism used to access the key. Can be local or hsmtool.",
-            values = ["local", "hsmtool"],
+            doc = "Mechanism used to access the key. Can be local or hsmtool or kss.",
+            values = ["local", "hsmtool", "kss"],
         ),
     },
 )
