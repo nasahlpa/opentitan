@@ -138,6 +138,16 @@ status_t handle_ibex_fi_char_addi_single_beq_cm2(ujson_t *uj);
 status_t handle_ibex_fi_char_addi_single_beq_neg(ujson_t *uj);
 
 /**
+ * handle_ibex_fi_char_addi_single_beq_neg_32b command handler.
+ * Similar to handle_ibex_fi_char_addi_single_beq_neg but without using compact commmands.
+ * 
+ *
+ * @param uj An initialized uJSON context.
+ * @return OK or error.
+ */
+status_t handle_ibex_fi_char_addi_single_beq_neg_32b(ujson_t *uj);
+
+/**
  * ibex.fi.char_single_bne command handler.
  *
  * This FI penetration tests executes the following instructions:

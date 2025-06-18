@@ -115,6 +115,7 @@ fn run_fi_ibex_testcase(
         "CharSingleBeq" => IbexFiSubcommand::CharSingleBeq,
         "CharAddiSingleBeq" => IbexFiSubcommand::CharAddiSingleBeq,
         "CharAddiSingleBeqNeg" => IbexFiSubcommand::CharAddiSingleBeqNeg,
+        "CharAddiSingleBeqNeg32bit" => IbexFiSubcommand::CharAddiSingleBeqNeg32bit,
         "CharSingleBne" => IbexFiSubcommand::CharSingleBne,
         "CharAddiSingleBne" => IbexFiSubcommand::CharAddiSingleBne,
         "CharAddiSingleBneNeg" => IbexFiSubcommand::CharAddiSingleBneNeg,
