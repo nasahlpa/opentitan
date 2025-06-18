@@ -20,9 +20,9 @@ KeyInfo = provider(
     fields = {
         "id": "Identifier used by the consumers of the provider to determine the key algorithm.",
         "config": "The config of the key. Specific to the key algorithm.",
-        "method": "Mechanism used to access the key. Can be local or hsmtool.",
+        "method": "Mechanism used to access the key. Can be local or hsmtool, or kss.",
         "pub_key": "Public key `file`.",
-        "private_key": "Private key `file`. May be None when method is set to hsmtool.",
+        "private_key": "Private key `file`. May be None when method is set to hsmtool or kss.",
         "type": "The type of the key. Can be TestKey, DevKey or ProdKey.",
     },
 )
@@ -99,15 +99,21 @@ def _signing_tool_info(ctx, key, opentitantool):
     if KeySetInfo in key:
         ksi = key[KeySetInfo]
         return ksi.tool, ksi.sign, ksi.profile
-    elif DefaultInfo in key:
+    elif KeyInfo in key:
+        # TODO: The signing tool is bogus in the case of a kss key.
         toolinfo = SigningToolInfo(
             tool = opentitantool,
             data = [],
             env = {},
             location = "local",
         )
-        return toolinfo, _local_sign, None
-    fail("Expected a KeySetInfo or DefaultInfo provider")
+
+        if key[KeyInfo].method == "local":
+            signing_func = _local_sign
+        elif key[KeyInfo].method == "kss":
+            signing_func = _kss_sign
+        return toolinfo, signing_func, None
+    fail("Expected a KeySetInfo or KeyInfo provider")
 
 def key_ext(ecdsa, rsa, spx):
     """Returns the key extension for a given key.
@@ -311,6 +317,22 @@ def _presigning_artifacts(ctx, opentitantool, src, manifest, ecdsa_key, rsa_key,
                 output = "{}.spx_sig".format(basename),
                 input = "{}.spx-message".format(basename),
             ))
+    elif ecdsa_key_uses_kss(ecdsa_key):
+        spxmsg = ctx.actions.declare_file("{}.spx-message".format(basename))
+        ctx.actions.run(
+            outputs = [spxmsg],
+            inputs = [pre],
+            arguments = [
+                "--rcfile=",
+                "--quiet",
+                "image",
+                "spx-message",
+                "--output={}".format(spxmsg.path),
+                pre.path,
+            ],
+            executable = opentitantool,
+            mnemonic = "PreSigningSpxMessage",
+        )
 
     return struct(pre = pre, digest = digest, spxmsg = spxmsg, script = signing_directives)
 
@@ -500,6 +522,77 @@ def _hsmtool_sign(ctx, tool, digest, ecdsa_key, rsa_key, spxmsg = None, spx_key 
         return sig, None, spx_sig
     else:
         fail("Expected an ECDSA or RSA key")
+
+def ecdsa_key_uses_kss(ecdsa_key):
+    return ecdsa_key and "kss_tool_path" in ecdsa_key.config
+
+def _kss_sign(ctx, tool, digest, ecdsa_key, rsa_key, spxmsg = None, spx_key = None, profile = None):
+    if rsa_key:
+        fail("KSS only signs ecdsa/spx keys")
+
+    if spxmsg == None:
+        fail("KSS signing requires an spx message for both ECDSA/SPX keys.")
+
+    ecdsa_sig = None
+    if ecdsa_key:
+        ecdsa_sig = ctx.actions.declare_file(paths.replace_extension(spxmsg.basename, ".ecdsa_sig"))
+
+        if ecdsa_key.config["backend_type"] == "prod":
+            prod_back_end = "true"
+        else:
+            prod_back_end = "false"
+
+        ctx.actions.run(
+            outputs = [ecdsa_sig],
+            inputs = [spxmsg],
+            arguments = [
+                "--ecdsa_mode",
+                "--to_sign_file_path={}".format(spxmsg.path),
+                "--signature_out_file_path={}".format(ecdsa_sig.path),
+                "--use_prod_kss_backend={}".format(prod_back_end),
+                "--build_target={}".format(ecdsa_key.config["key_variant"]),
+            ],
+            executable = ecdsa_key.config["kss_tool_path"],
+            execution_requirements = {
+                "no-sandbox": "1",
+                "no-cache": "1",
+                "network-required": "1",
+            },
+        )
+
+    spx_sig = None
+    if spx_key:
+        if spx_key.config["domain"] != "Pure":
+            fail("KSS signing for sphincs+ only supports Pure mode")
+
+        if spxmsg == None:
+            fail("Missing spx msg to sign")
+
+        if spx_key.config["backend_type"] == "prod":
+            prod_back_end = "true"
+        else:
+            prod_back_end = "false"
+
+        spx_sig = ctx.actions.declare_file(paths.replace_extension(spxmsg.basename, ".spx-sig"))
+        ctx.actions.run(
+            outputs = [spx_sig],
+            inputs = [spxmsg],
+            arguments = [
+                "--slh_dsa_mode",
+                "--to_sign_file_path={}".format(spxmsg.path),
+                "--signature_out_file_path={}".format(spx_sig.path),
+                "--use_prod_kss_backend={}".format(prod_back_end),
+                "--build_target={}".format(spx_key.config["key_variant"]),
+            ],
+            executable = spx_key.config["kss_tool_path"],
+            execution_requirements = {
+                "no-sandbox": "1",
+                "no-cache": "1",
+                "network-required": "1",
+            },
+        )
+
+    return ecdsa_sig, None, spx_sig
 
 def _post_signing_attach(ctx, opentitantool, pre, ecdsa_sig, rsa_sig, spx_sig):
     """Attach signatures to an unsigned binary.
@@ -925,6 +1018,8 @@ def _keyset(ctx):
         fail("Key name", selected_key, "is not in ", keys.keys())
     if ctx.attr.profile == "local":
         sign = _local_sign
+    elif ctx.attr.profile == "kss":
+        sign = _kss_sign
     else:
         sign = _hsmtool_sign
     return [KeySetInfo(keys = keys, config = config, selected_key = selected_key, profile = ctx.attr.profile, sign = sign, tool = tool)]

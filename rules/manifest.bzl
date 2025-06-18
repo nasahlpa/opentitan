@@ -4,6 +4,17 @@
 
 load("//rules:const.bzl", "CONST", "hex")
 
+# Specific rules to enable node locked signing via command line
+NodeLockedInfoProvider = provider(fields = ["device_id"])
+
+def _impl(ctx):
+    return NodeLockedInfoProvider(device_id = ctx.build_setting_value)
+
+nodelocked_info = rule(
+    implementation = _impl,
+    build_setting = config.string(flag = True),
+)
+
 _SEL_DEVICE_ID = 1
 _SEL_MANUF_STATE_CREATOR = (1 << 8)
 _SEL_MANUF_STATE_OWNER = (1 << 9)
@@ -80,7 +91,14 @@ def _manifest_impl(ctx):
     if ctx.attr.security_version:
         mf["security_version"] = ctx.attr.security_version
     if ctx.attr.timestamp:
-        mf["timestamp"] = ctx.attr.timestamp
+        timestamp_val = int(ctx.attr.timestamp, 16)
+
+        # manifest json definition expects two uint32_t's,
+        # least significant word first
+        mf["timestamp"] = [
+            hex(timestamp_val & 0xFFFFFFFF),
+            hex((timestamp_val >> 32) & 0xFFFFFFFF),
+        ]
     if ctx.attr.max_key_version:
         mf["max_key_version"] = ctx.attr.max_key_version
     if ctx.attr.code_start:
@@ -208,6 +226,30 @@ def _manifest_impl(ctx):
             },
         )
 
+    # If we were provided with node locked information, overwrite passed in manifest
+    # info.
+    if ctx.attr.node_locked_cfg != None:
+        node_lock_device_id = ctx.attr.node_locked_cfg[NodeLockedInfoProvider].device_id
+    else:
+        node_lock_device_id = ""
+
+    if node_lock_device_id != "":
+        dev_id1, dev_id0 = node_lock_device_id.split(":")
+        dev_id0 = "0x" + dev_id0
+        dev_id1 = "0x" + dev_id1
+        mf["usage_constraints"]["device_id"] = [
+            hex(CONST.DEFAULT_USAGE_CONSTRAINTS),
+            dev_id0,
+            dev_id1,
+            hex(CONST.DEFAULT_USAGE_CONSTRAINTS),
+            hex(CONST.DEFAULT_USAGE_CONSTRAINTS),
+            hex(CONST.DEFAULT_USAGE_CONSTRAINTS),
+            hex(CONST.DEFAULT_USAGE_CONSTRAINTS),
+            hex(CONST.DEFAULT_USAGE_CONSTRAINTS),
+        ]
+
+        mf["usage_constraints"]["selector_bits"] = "0x6"
+
     file = ctx.actions.declare_file("{}.json".format(ctx.attr.name))
     ctx.actions.write(file, json.encode_indent(mf))
     return DefaultInfo(
@@ -244,6 +286,7 @@ _manifest = rule(
         "extensions": attr.string_list(doc = "Names of the manifest extensions as an array of strings"),
         "integrator_specific_firmware_binding": attr.string(doc = "Create an Integrator Specific Firmware Block (ISFB) JSON object"),
         "isfb_erase_allowed_policy": attr.string(doc = "Create an ISFB Erase Allowed Policy JSON object"),
+        "node_locked_cfg": attr.label(doc = "Specific addition to enable node locked signing. Overwrites device_id and selector_bits."),
         "secver_write": attr.string(default = "none", values = ["none", "false", "true"], doc = "Add the secver_write extension with the specified value"),
     },
 )

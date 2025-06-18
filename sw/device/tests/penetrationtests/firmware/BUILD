@@ -11,9 +11,12 @@ load(
     "EARLGREY_SILICON_OWNER_ROM_EXT_ENVS",
     "EARLGREY_TEST_ENVS",
     "fpga_params",
-    "opentitan_binary",
     "opentitan_test",
     "silicon_params",
+)
+load(
+    "@provisioning_exts//:cfg.bzl",
+    "EXT_EXEC_ENV_SILICON_ROM_EXT_A2",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -21,6 +24,7 @@ package(default_visibility = ["//visibility:public"])
 PENTEST_EXEC_ENVS = dicts.add(
     EARLGREY_TEST_ENVS,
     EARLGREY_SILICON_OWNER_ROM_EXT_ENVS,
+    EXT_EXEC_ENV_SILICON_ROM_EXT_A2,
     {
         "//hw/top_earlgrey:sim_dv": None,
         "//hw/top_earlgrey:fpga_cw310_test_rom": None,
