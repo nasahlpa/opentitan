@@ -971,6 +971,79 @@ status_t handle_ibex_fi_char_addi_single_beq_neg(ujson_t *uj) {
   return OK_STATUS();
 }
 
+status_t handle_ibex_fi_char_addi_single_beq_neg_32bit(ujson_t *uj) {
+  // Clear registered alerts in alert handler.
+  pentest_registered_alerts_t reg_alerts = pentest_get_triggered_alerts();
+  // Clear the AST recoverable alerts.
+  pentest_clear_sensor_recov_alerts();
+
+  uint32_t result1 = 0;
+  uint32_t result2 = 0;
+
+  // Initialize x5-x7, x12-x17, and x28-x30 with 0.
+  init_regs(0);
+  uint32_t res_values[13];
+
+  // FI code target.
+  asm volatile("li x5, 0x1a\n");
+  asm volatile("li x6, 0x0f\n");
+  PENTEST_ASM_TRIGGER_HIGH
+  asm volatile(
+      "addi x12, x12, 33\n"
+      "addi x13, x13, 33\n"
+      "addi x14, x14, 33\n"
+      "addi x15, x15, 33\n"
+      "addi x16, x16, 33\n"
+      "addi x17, x17, 33\n"
+      "addi x28, x28, 33\n"
+      "addi x29, x29, 33\n"
+      "addi x30, x30, 33\n"
+      "addi x31, x31, 33\n"
+      "beq x5, x6, badbeqneg32b\n"
+      "addi x12, x12, 100\n"
+      "addi x13, x13, 100\n"
+      "addi x14, x14, 100\n"
+      "addi x15, x15, 100\n"
+      "addi x16, x16, 100\n"
+      "addi x17, x17, 100\n"
+      "addi x28, x28, 100\n"
+      "addi x29, x29, 100\n"
+      "addi x30, x30, 100\n"
+      "addi x31, x31, 100\n"
+      "jal x7, correctbeqneg32b\n"
+      "badbeqneg32b:\n"
+      "addi x5, x5, 0x55\n"
+      "addi x6, x6, 0x66\n"
+      "correctbeqneg32b:\n");
+  PENTEST_ASM_TRIGGER_LOW
+  asm volatile("mv %0, x5" : "=r"(result1));
+  asm volatile("mv %0, x6" : "=r"(result2));
+  read_regs(res_values);
+
+  // Get registered alerts from alert handler.
+  reg_alerts = pentest_get_triggered_alerts();
+  // Get fatal and recoverable AST alerts from sensor controller.
+  pentest_sensor_alerts_t sensor_alerts = pentest_get_sensor_alerts();
+
+  // Read ERR_STATUS register.
+  dif_rv_core_ibex_error_status_t codes;
+  TRY(dif_rv_core_ibex_get_error_status(&rv_core_ibex, &codes));
+
+  // Send loop counters & ERR_STATUS to host.
+  ibex_fi_test_result_single_branch_t uj_output;
+  uj_output.result1 = result1;
+  uj_output.result2 = result2;
+  for (int i = 0; i < 10; i++) {
+    uj_output.registers[i] = res_values[i + 3];
+  }
+  uj_output.err_status = codes;
+  memcpy(uj_output.alerts, reg_alerts.alerts, sizeof(reg_alerts.alerts));
+  memcpy(uj_output.ast_alerts, sensor_alerts.alerts,
+         sizeof(sensor_alerts.alerts));
+  RESP_OK(ujson_serialize_ibex_fi_test_result_single_branch_t, uj, &uj_output);
+  return OK_STATUS();
+}
+
 status_t handle_ibex_fi_char_single_bne(ujson_t *uj) {
   // Clear registered alerts in alert handler.
   pentest_registered_alerts_t reg_alerts = pentest_get_triggered_alerts();
@@ -3792,6 +3865,8 @@ status_t handle_ibex_fi(ujson_t *uj) {
       return handle_ibex_fi_char_addi_single_beq_cm2(uj);
     case kIbexFiSubcommandCharAddiSingleBeqNeg:
       return handle_ibex_fi_char_addi_single_beq_neg(uj);
+    case kIbexFiSubcommandCharAddiSingleBeqNeg32bit:
+      return handle_ibex_fi_char_addi_single_beq_neg_32bit(uj);
     case kIbexFiSubcommandCharSingleBne:
       return handle_ibex_fi_char_single_bne(uj);
     case kIbexFiSubcommandCharAddiSingleBne:

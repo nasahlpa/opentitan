@@ -19,6 +19,7 @@ extern "C" {
     value(_, CharAddiSingleBeqCm) \
     value(_, CharAddiSingleBeqCm2) \
     value(_, CharAddiSingleBeqNeg) \
+    value(_, CharAddiSingleBeqNeg32bit) \
     value(_, CharSingleBne) \
     value(_, CharAddiSingleBne) \
     value(_, CharAddiSingleBneNeg) \
