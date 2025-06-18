@@ -15,6 +15,46 @@
 
 #include "hw/top_earlgrey/sw/autogen/top_earlgrey.h"
 
+status_t handle_cryptolib_fi_aes(ujson_t *uj) {
+  cryptolibfi_aes_in_t uj_input;
+  TRY(ujson_deserialize_cryptolibfi_aes_in_t(uj, &uj_input));
+
+  LOG_INFO("STUB NOT IMPLEMENTED");
+  // Perform an AES encryption or decryption.
+  // Adjust the mode of operation and the padding mode.
+  // The total size of this test can be large due to all these options.
+  // Triggers are over the API calls.
+
+  cryptolibfi_aes_out_t uj_output;
+  RESP_OK(ujson_serialize_cryptolibfi_aes_out_t, uj, &uj_output);
+}
+
+status_t handle_cryptolib_fi_cmac(ujson_t *uj) {
+  cryptolibfi_cmac_in_t uj_input;
+  TRY(ujson_deserialize_cryptolibfi_cmac_in_t(uj, &uj_input));
+
+  LOG_INFO("STUB NOT IMPLEMENTED");
+  // Perform a CMAC encryption.
+  // Verify the tag before sending the output.
+  // Triggers are over the API calls.
+
+  cryptolibfi_cmac_out_t uj_output;
+  RESP_OK(ujson_serialize_cryptolibfi_cmac_out_t, uj, &uj_output);
+}
+
+status_t handle_cryptolib_fi_gcm(ujson_t *uj) {
+  cryptolibfi_gcm_in_t uj_input;
+  TRY(ujson_deserialize_cryptolibfi_gcm_in_t(uj, &uj_input));
+
+  LOG_INFO("STUB NOT IMPLEMENTED");
+  // Perform a GCM encryption with aad and generate a tag.
+  // Then, verify that tag again, before sending the output.
+  // Trigger are over the API calls.
+
+  cryptolibfi_gcm_out_t uj_output;
+  RESP_OK(ujson_serialize_cryptolibfi_gcm_out_t, uj, &uj_output);
+}
+
 status_t handle_cryptolib_fi_init(ujson_t *uj) {
   penetrationtest_cpuctrl_t uj_cpuctrl_data;
   TRY(ujson_deserialize_penetrationtest_cpuctrl_t(uj, &uj_cpuctrl_data));
@@ -73,6 +113,12 @@ status_t handle_cryptolib_fi(ujson_t *uj) {
   cryptolib_fi_subcommand_t cmd;
   TRY(ujson_deserialize_cryptolib_fi_subcommand_t(uj, &cmd));
   switch (cmd) {
+    case kCryptoLibFiSubcommandAes:
+      return handle_cryptolib_fi_aes(uj);
+    case kCryptoLibFiSubcommandCmac:
+      return handle_cryptolib_fi_cmac(uj);
+    case kCryptoLibFiSubcommandGcm:
+      return handle_cryptolib_fi_gcm(uj);
     case kCryptoLibFiSubcommandInit:
       return handle_cryptolib_fi_init(uj);
     default:
