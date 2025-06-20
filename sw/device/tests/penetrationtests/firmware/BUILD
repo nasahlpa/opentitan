@@ -11,6 +11,7 @@ load(
     "EARLGREY_SILICON_OWNER_ROM_EXT_ENVS",
     "EARLGREY_TEST_ENVS",
     "fpga_params",
+    "opentitan_binary",
     "opentitan_test",
     "silicon_params",
 )
