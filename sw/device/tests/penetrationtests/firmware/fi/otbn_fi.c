@@ -1256,7 +1256,8 @@ status_t handle_otbn_fi_init(ujson_t *uj) {
   // Configure the alert handler. Alerts triggered by IP blocks are captured
   // and reported to the test.
   pentest_configure_alert_handler(
-      uj_alert_data.alert_classes, uj_alert_data.accumulation_threshold,
+      uj_alert_data.alert_classes, uj_alert_data.enable_alerts,
+      uj_alert_data.enable_classes, uj_alert_data.accumulation_thresholds,
       uj_alert_data.signals, uj_alert_data.duration_cycles,
       uj_alert_data.ping_timeout);
 
