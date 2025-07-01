@@ -39,6 +39,11 @@ enum {
    * Number of max D words in RSA.
    */
   kPentestRsaMaxDWords = RSA_CMD_MAX_N_BYTES / sizeof(uint32_t),
+  /**
+   * RSA padding modes.
+   */
+  kPentestRsaPaddingPkcs = 0,
+  kPentestRsaPaddingPss = 1,
 };
 
 #endif  // OPENTITAN_SW_DEVICE_TESTS_PENETRATIONTESTS_FIRMWARE_LIB_CRYPTOLIB_ASYM_H_
