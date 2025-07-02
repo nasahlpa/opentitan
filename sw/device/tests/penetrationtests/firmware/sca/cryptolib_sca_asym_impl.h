@@ -71,7 +71,6 @@ status_t cryptolib_sca_p256_ecdh_impl(
     cryptolib_sca_asym_p256_ecdh_in_t uj_input,
     cryptolib_sca_asym_p256_ecdh_out_t *uj_output);
 
-
 /**
  * Wrapper to P256 Sign cryptolib implementation.
  *
@@ -82,6 +81,17 @@ status_t cryptolib_sca_p256_ecdh_impl(
 status_t cryptolib_sca_p256_sign_impl(
     cryptolib_sca_asym_p256_sign_in_t uj_input,
     cryptolib_sca_asym_p256_sign_out_t *uj_output);
+
+/**
+ * Wrapper to ECDH in P384 cryptolib implementation.
+ *
+ * @param uj_input An initialized uJSON context.
+ * @param uj_output An initialized uJSON context.
+ * @return OK or error.
+ */
+status_t cryptolib_sca_p384_ecdh_impl(
+    cryptolib_sca_asym_p384_ecdh_in_t uj_input,
+    cryptolib_sca_asym_p384_ecdh_out_t *uj_output);
 
 /**
  * Wrapper to P384 Sign cryptolib implementation.
