@@ -72,15 +72,19 @@ status_t cryptolib_sca_rsa_dec_impl(
   TRY_CHECK(num_bytes == data_len);
 
   otcrypto_hash_mode_t hash_mode;
+  size_t hash_digest_bytes;
   switch (hashing) {
     case kPentestRsaHashmodeSha256:
       hash_mode = kOtcryptoHashModeSha256;
+      hash_digest_bytes = kSha256DigestBytes;
       break;
     case kPentestRsaHashmodeSha384:
       hash_mode = kOtcryptoHashModeSha384;
+      hash_digest_bytes = kSha384DigestBytes;
       break;
     case kPentestRsaHashmodeSha512:
       hash_mode = kOtcryptoHashModeSha512;
+      hash_digest_bytes = kSha512DigestBytes;
       break;
     default:
       LOG_ERROR("Unsupported RSA hash mode: %d", hashing);
@@ -157,10 +161,11 @@ status_t cryptolib_sca_rsa_dec_impl(
                                          .len = kTestLabelLen};
 
   // Create output buffer for the plaintext.
-  uint8_t plaintext_buf[RSA_CMD_MAX_MESSAGE_BYTES];
+  size_t kMaxPlaintextBytes = num_bytes - 2 * hash_digest_bytes - 2;
+  uint8_t plaintext_buf[kMaxPlaintextBytes];
   otcrypto_byte_buf_t plaintext = {
       .data = plaintext_buf,
-      .len = num_words,
+      .len = kMaxPlaintextBytes,
   };
 
   size_t msg_len;
