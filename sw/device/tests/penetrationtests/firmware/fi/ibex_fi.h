@@ -367,6 +367,29 @@ status_t handle_ibex_fi_char_csr_read(ujson_t *uj);
 status_t handle_ibex_fi_char_csr_write(ujson_t *uj);
 
 /**
+ * ibex.fi.char.csr_combi command handler.
+ *
+ * This FI penetration tests executes the following instructions:
+ * - Set the trigger.
+ * - Write reference values to a list of CSRs.
+ * - Unset the trigger.
+ * - Set the trigger.
+ * - Do nothing.
+ * - Unset the trigger.
+ * - Set the trigger.
+ * - Read CSRs.
+ * - Unset the trigger.
+ * - Compare the read values with the reference values.
+ * - Return the values over UART.
+ *
+ * Faults are injected during the trigger_high & trigger_low.
+ *
+ * @param uj An initialized uJSON context.
+ * @return OK or error.
+ */
+status_t handle_ibex_fi_char_csr_combi(ujson_t *uj);
+
+/**
  * ibex.fi.char.flash_read command handler.
  *
  * This FI penetration tests executes the following instructions:
