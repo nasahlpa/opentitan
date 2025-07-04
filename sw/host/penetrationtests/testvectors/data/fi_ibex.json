@@ -56,118 +56,124 @@
   },
   {
     "test_case_id": 10,
+    "command": "CharCsrCombi",
+    "input": "{\"trigger\": 0, \"ref_values\": [1,2,3,4,5,6]}",
+    "expected_output": ["{\"output\":[1,2,3,4,5,6], \"data_faulty\": [false, false, false, false, false, false], \"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
+  },
+  {
+    "test_case_id": 11,
     "command": "CharFlashRead",
     "input": "{\"flash_region\": 2}",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 11,
+    "test_case_id": 12,
     "command": "CharFlashWrite",
     "input": "{\"flash_region\": 2}",
     "expected_output": ["{\"result\":0,\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 12,
+    "test_case_id": 13,
     "command": "CharMemOpLoop",
     "expected_output": ["{\"result\":[10000,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 13,
+    "test_case_id": 14,
     "command": "CharRegisterFile",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 14,
+    "test_case_id": 15,
     "command": "CharRegisterFileRead",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 15,
+    "test_case_id": 16,
     "command": "CharRegOpLoop",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 16,
+    "test_case_id": 17,
     "command": "CharSramRead",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 17,
+    "test_case_id": 18,
     "command": "CharSramStatic",
     "expected_output": ["{\"addresses\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 18,
+    "test_case_id": 19,
     "command": "CharSramWrite",
     "expected_output": ["{\"memory\":[464367618,2343432205,2779096485,2880154539,2881141438,2880293630,3131746989,3134333474,3148725999,3200171710,3203386062,3221229823,3405697037,3405709037,3435973836,3452816845,219540062,3735883980,3735928559,3735931646,3735929054,3735943697,3735941133,3741239533,3735936685,3490524077,3958107115,4208909997,4261281277,4276215469,4277009102,4277075694,464367618,2343432205,2779096485,2880154539,2881141438,2880293630,3131746989,3134333474,3148725999,3200171710,3203386062,3221229823,3405697037,3405709037,3435973836,3452816845,219540062,3735883980,3735928559,3735931646,3735929054,3735943697,3735941133,3741239533,3735936685,3490524077,3958107115,4208909997,4261281277,4276215469,4277009102,4277075694],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 19,
+    "test_case_id": 20,
     "command": "CharSramWriteRead",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 20,
+    "test_case_id": 21,
     "command": "CharSramWriteStaticUnrolled",
     "expected_output": ["{\"memory\":[464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618,464367618],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 21,
+    "test_case_id": 22,
     "command": "CharUncondBranch",
     "expected_output": ["{\"result\":30,\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 22,
+    "test_case_id": 23,
     "command": "CharUncondBranchNop",
     "expected_output": ["{\"result\":0,\"registers\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 23,
+    "test_case_id": 24,
     "command": "CharUnrolledMemOpLoop",
     "expected_output": ["{\"result\":10000,\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 24,
+    "test_case_id": 25,
     "command": "CharUnrolledRegOpLoop",
     "expected_output": ["{\"result\":10000,\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 25,
+    "test_case_id": 26,
     "command": "CharUnrolledRegOpLoopChain",
     "expected_output": ["{\"result\":[60,55,56,57,58,59,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 26,
+    "test_case_id": 27,
     "command": "CharSingleBeq",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 27,
+    "test_case_id": 28,
     "command": "CharAddiSingleBeq",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 28,
+    "test_case_id": 29,
     "command": "CharAddiSingleBeqNeg",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 29,
+    "test_case_id": 30,
     "command": "CharSingleBne",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 30,
+    "test_case_id": 31,
     "command": "CharAddiSingleBne",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 31,
+    "test_case_id": 32,
     "command": "CharAddiSingleBneNeg",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 32,
+    "test_case_id": 33,
     "command": "CharCombi",
     "expected_output": [
       "{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}",
@@ -176,12 +182,12 @@
     ]
   },
   {
-    "test_case_id": 33,
+    "test_case_id": 34,
     "command": "CharSramWriteReadAlt",
     "expected_output": ["{\"memory\":[2880293630,3131746989,3134333474,2880293630,3131746989,3134333474,2880293630,3131746989,3134333474,2880293630,3131746989,3134333474,2880293630,3131746989,3134333474,2880293630,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0]}"]
   },
   {
-    "test_case_id": 33,
+    "test_case_id": 35,
     "command": "CharSramReadRet",
     "expected_output": ["{\"data_faulty\":[false,false,false,false,false,false,false,false,false,false,false,false,false],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0],\"err_status\":0,\"alerts\":[0,0,0],\"ast_alerts\":[0,0], \"sram_err_status\":56}"]
   }
