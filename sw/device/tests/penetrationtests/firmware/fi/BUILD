@@ -145,6 +145,13 @@ cc_library(
         "//sw/device/silicon_creator/manuf/lib:otp_fields",
         "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
         "//sw/device/tests/penetrationtests/json:ibex_fi_commands",
+        "//sw/device/lib/base:abs_mmio",
+        "//hw/ip/aes/data:aes_c_regs",
+        "//hw/ip/keymgr/data:keymgr_c_regs",
+        "//hw/ip/sram_ctrl/data:sram_ctrl_c_regs",
+        "//hw/ip/hmac/data:hmac_c_regs",
+        "//hw/top_earlgrey:alert_handler_c_regs",
+        "//hw/ip/entropy_src/data:entropy_src_c_regs",
     ],
 )
 
