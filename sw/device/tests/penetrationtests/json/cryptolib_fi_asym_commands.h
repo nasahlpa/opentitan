@@ -170,6 +170,8 @@ UJSON_SERDE_STRUCT(CryptoLibFiAsymP256EcdhOut, cryptolib_fi_asym_p256_ecdh_out_t
 
 #define CRYPTOLIBFIASYM_P256_SIGN_IN(field, string) \
     field(scalar, uint8_t, P256_CMD_BYTES) \
+    field(pubx, uint8_t, P256_CMD_BYTES) \
+    field(puby, uint8_t, P256_CMD_BYTES) \
     field(message, uint8_t, P256_CMD_BYTES) \
     field(cfg, size_t) \
     field(trigger, size_t)
@@ -178,8 +180,6 @@ UJSON_SERDE_STRUCT(CryptoLibFiAsymP256SignIn, cryptolib_fi_asym_p256_sign_in_t, 
 #define CRYPTOLIBFIASYM_P256_SIGN_OUT(field, string) \
     field(r, uint8_t, P256_CMD_BYTES) \
     field(s, uint8_t, P256_CMD_BYTES) \
-    field(pubx, uint8_t, P256_CMD_BYTES) \
-    field(puby, uint8_t, P256_CMD_BYTES) \
     field(cfg, size_t)
 UJSON_SERDE_STRUCT(CryptoLibFiAsymP256SignOut, cryptolib_fi_asym_p256_sign_out_t, CRYPTOLIBFIASYM_P256_SIGN_OUT);
 
@@ -238,6 +238,8 @@ UJSON_SERDE_STRUCT(CryptoLibFiAsymP384EcdhOut, cryptolib_fi_asym_p384_ecdh_out_t
 
 #define CRYPTOLIBFIASYM_P384_SIGN_IN(field, string) \
     field(scalar, uint8_t, P384_CMD_BYTES) \
+    field(pubx, uint8_t, P384_CMD_BYTES) \
+    field(puby, uint8_t, P384_CMD_BYTES) \
     field(message, uint8_t, P384_CMD_BYTES) \
     field(cfg, size_t) \
     field(trigger, size_t)
@@ -246,8 +248,6 @@ UJSON_SERDE_STRUCT(CryptoLibFiAsymP384SignIn, cryptolib_fi_asym_p384_sign_in_t, 
 #define CRYPTOLIBFIASYM_P384_SIGN_OUT(field, string) \
     field(r, uint8_t, P384_CMD_BYTES) \
     field(s, uint8_t, P384_CMD_BYTES) \
-    field(pubx, uint8_t, P384_CMD_BYTES) \
-    field(puby, uint8_t, P384_CMD_BYTES) \
     field(cfg, size_t)
 UJSON_SERDE_STRUCT(CryptoLibFiAsymP384SignOut, cryptolib_fi_asym_p384_sign_out_t, CRYPTOLIBFIASYM_P384_SIGN_OUT);
 

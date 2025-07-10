@@ -491,10 +491,6 @@ status_t cryptolib_sca_p256_sign_impl(
   memcpy(uj_output->r, signature_p256->r, kP256ScalarBytes);
   memcpy(uj_output->s, signature_p256->s, kP256ScalarBytes);
 
-  // Return the public key.
-  memset(uj_output->pubx, 0, P256_CMD_BYTES);
-  memset(uj_output->puby, 0, P256_CMD_BYTES);
-
   return OK_STATUS();
 }
 
@@ -629,10 +625,6 @@ status_t cryptolib_sca_p384_sign_impl(
       (p384_ecdsa_signature_t *)signature_mut.data;
   memcpy(uj_output->r, signature_p384->r, kP384ScalarBytes);
   memcpy(uj_output->s, signature_p384->s, kP384ScalarBytes);
-
-  // Return the public key.
-  memset(uj_output->pubx, 0, P384_CMD_BYTES);
-  memset(uj_output->puby, 0, P384_CMD_BYTES);
 
   return OK_STATUS();
 }
