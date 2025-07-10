@@ -64,6 +64,7 @@ cc_library(
         "//sw/device/lib/testing/test_framework:ujson_ottf",
         "//sw/device/lib/ujson",
         "//sw/device/tests/penetrationtests/json:pentest_lib_commands",
+        "//sw/device/lib/dif:rom_ctrl",
     ] + select({
         "//sw/device:is_english_breakfast": [],
         "//conditions:default": [
