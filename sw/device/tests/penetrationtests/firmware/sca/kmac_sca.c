@@ -756,7 +756,8 @@ status_t handle_kmac_sca_batch_daisy_chain(ujson_t *uj) {
     memcpy(kmac_key.share0, uj_key.key, kKeyLength);
 
     pentest_set_trigger_high();
-    if (sha3_ujson_absorb(message_buf, KMACSCA_CMD_MAX_MSG_BYTES) != kmacScaOk) {
+    if (sha3_ujson_absorb(message_buf, KMACSCA_CMD_MAX_MSG_BYTES) !=
+        kmacScaOk) {
       return ABORTED();
     }
     pentest_set_trigger_low();
@@ -765,7 +766,7 @@ status_t handle_kmac_sca_batch_daisy_chain(ujson_t *uj) {
     if (kmac_get_digest(out, kDigestLength) != kmacScaOk) {
       return ABORTED();
     }
-    
+
     // Copy the output to the input.
     memcpy(message_buf, (uint8_t *)out, KMACSCA_CMD_MAX_MSG_BYTES);
   }

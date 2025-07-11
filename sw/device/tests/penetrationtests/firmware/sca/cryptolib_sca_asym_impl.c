@@ -138,12 +138,12 @@ status_t cryptolib_sca_rsa_dec_impl(
   };
 
   // Trigger window.
-  if (trigger == 0) {
+  if (trigger & kPentestTrigger1) {
     pentest_set_trigger_high();
   }
   TRY(otcrypto_rsa_private_key_from_exponents(rsa_size, modulus, e, d_share0,
                                               d_share1, &private_key));
-  if (trigger == 0) {
+  if (trigger & kPentestTrigger1) {
     pentest_set_trigger_low();
   }
 
@@ -170,18 +170,18 @@ status_t cryptolib_sca_rsa_dec_impl(
 
   size_t msg_len;
   // Trigger window.
-  if (trigger == 1) {
+  if (trigger & kPentestTrigger2) {
     pentest_set_trigger_high();
   }
-  otcrypto_status_t status = otcrypto_rsa_decrypt(
+  otcrypto_status_t status_out = otcrypto_rsa_decrypt(
       &private_key, hash_mode, ciphertext, label_buf, plaintext, &msg_len);
-  if (trigger == 1) {
+  if (trigger & kPentestTrigger2) {
     pentest_set_trigger_low();
   }
 
   // Return data back to host.
   *data_out_len = msg_len;
-  *cfg_out = (size_t)status.value;
+  *cfg_out = 0;
   memset(data_out, 0, RSA_CMD_MAX_MESSAGE_BYTES);
   memcpy(data_out, plaintext_buf, msg_len);
 
@@ -241,7 +241,7 @@ status_t cryptolib_sca_p256_ecdh_impl(
   };
 
   pentest_set_trigger_high();
-  otcrypto_status_t status =
+  otcrypto_status_t status_out =
       otcrypto_ecdh_p256(&private_key, &public_key, &shared_secret);
   pentest_set_trigger_low();
 
@@ -257,7 +257,8 @@ status_t cryptolib_sca_p256_ecdh_impl(
   }
 
   // Return data back to host.
-  uj_output->cfg = (size_t)status.value;
+  uj_output->cfg = 0;
+  uj_output->status = (size_t)status_out.value;
   memset(uj_output->shared_key, 0, P256_CMD_BYTES);
   memcpy(uj_output->shared_key, ss, P256_CMD_BYTES);
 
@@ -375,12 +376,12 @@ status_t cryptolib_sca_rsa_sign_impl(
   };
 
   // Trigger window.
-  if (trigger == 0) {
+  if (trigger & kPentestTrigger1) {
     pentest_set_trigger_high();
   }
   TRY(otcrypto_rsa_private_key_from_exponents(rsa_size, modulus, e, d_share0,
                                               d_share1, &private_key));
-  if (trigger == 0) {
+  if (trigger & kPentestTrigger1) {
     pentest_set_trigger_low();
   }
 
@@ -400,12 +401,12 @@ status_t cryptolib_sca_rsa_sign_impl(
       .mode = hash_mode,
   };
   // Trigger window.
-  if (trigger == 1) {
+  if (trigger & kPentestTrigger2) {
     pentest_set_trigger_high();
   }
   // Hash the message.
   TRY(otcrypto_hash(msg_buf, msg_digest));
-  if (trigger == 1) {
+  if (trigger & kPentestTrigger2) {
     pentest_set_trigger_low();
   }
 
@@ -416,19 +417,18 @@ status_t cryptolib_sca_rsa_sign_impl(
   };
 
   // Trigger window.
-  if (trigger == 2) {
+  if (trigger & kPentestTrigger3) {
     pentest_set_trigger_high();
   }
-  otcrypto_status_t status =
-      otcrypto_rsa_sign(&private_key, msg_digest, padding_mode, rsa_sig);
+  TRY(otcrypto_rsa_sign(&private_key, msg_digest, padding_mode, rsa_sig));
   // Trigger window.
-  if (trigger == 2) {
+  if (trigger & kPentestTrigger3) {
     pentest_set_trigger_low();
   }
 
   // Return data back to host.
   *sig_len = *n_len;
-  *cfg_out = (size_t)status.value;
+  *cfg_out = 0;
   memset(sig, 0, RSA_CMD_MAX_SIGNATURE_BYTES);
   memcpy(sig, sig_buf, *sig_len);
 
@@ -498,17 +498,12 @@ status_t cryptolib_sca_p256_sign_impl(
   };
 
   // Trigger window 1.
-  if (uj_input.trigger == 1) {
-    pentest_set_trigger_high();
-  }
-  otcrypto_status_t status =
-      otcrypto_ecdsa_p256_sign(&private_key, message_digest, signature_mut);
-  if (uj_input.trigger == 1) {
-    pentest_set_trigger_low();
-  }
+  pentest_set_trigger_high();
+  TRY(otcrypto_ecdsa_p256_sign(&private_key, message_digest, signature_mut));
+  pentest_set_trigger_low();
 
   // Return data back to host.
-  uj_output->cfg = (size_t)status.value;
+  uj_output->cfg = 0;
   memset(uj_output->r, 0, P256_CMD_BYTES);
   memset(uj_output->s, 0, P256_CMD_BYTES);
   p256_ecdsa_signature_t *signature_p256 =
@@ -577,8 +572,7 @@ status_t cryptolib_sca_p384_ecdh_impl(
   };
 
   pentest_set_trigger_high();
-  otcrypto_status_t status =
-      otcrypto_ecdh_p384(&private_key, &public_key, &shared_secret);
+  TRY(otcrypto_ecdh_p384(&private_key, &public_key, &shared_secret));
   pentest_set_trigger_low();
 
   uint32_t share0[kPentestP384Words];
@@ -593,7 +587,7 @@ status_t cryptolib_sca_p384_ecdh_impl(
   }
 
   // Return data back to host.
-  uj_output->cfg = (size_t)status.value;
+  uj_output->cfg = 0;
   memset(uj_output->shared_key, 0, P384_CMD_BYTES);
   memcpy(uj_output->shared_key, ss, P384_CMD_BYTES);
 
@@ -662,18 +656,13 @@ status_t cryptolib_sca_p384_sign_impl(
       .len = ARRAYSIZE(sig),
   };
 
-  // Trigger window 1.
-  if (uj_input.trigger == 1) {
-    pentest_set_trigger_high();
-  }
-  otcrypto_status_t status =
-      otcrypto_ecdsa_p384_sign(&private_key, message_digest, signature_mut);
-  if (uj_input.trigger == 1) {
-    pentest_set_trigger_low();
-  }
+  // Trigger window.
+  pentest_set_trigger_high();
+  TRY(otcrypto_ecdsa_p384_sign(&private_key, message_digest, signature_mut));
+  pentest_set_trigger_low();
 
   // Return data back to host.
-  uj_output->cfg = (size_t)status.value;
+  uj_output->cfg = 0;
   memset(uj_output->r, 0, P384_CMD_BYTES);
   memset(uj_output->s, 0, P384_CMD_BYTES);
   p384_ecdsa_signature_t *signature_p384 =
