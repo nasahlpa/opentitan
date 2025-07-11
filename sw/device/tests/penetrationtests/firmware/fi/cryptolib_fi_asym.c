@@ -26,6 +26,7 @@ status_t handle_cryptolib_fi_asym_rsa_enc(ujson_t *uj) {
   // Trigger are over the API calls.
   cryptolib_fi_asym_rsa_enc_out_t uj_output;
   TRY(cryptolib_fi_rsa_enc_impl(uj_input, &uj_output));
+  LOG_INFO("debug print");
   /////////////// STUB END ///////////////
 
   RESP_OK(ujson_serialize_cryptolib_fi_asym_rsa_enc_out_t, uj, &uj_output);

@@ -328,7 +328,8 @@ otcrypto_status_t otcrypto_rsa_encrypt(
     otcrypto_const_byte_buf_t label, otcrypto_word32_buf_t ciphertext) {
   HARDENED_TRY(
       otcrypto_rsa_encrypt_async_start(public_key, hash_mode, message, label));
-  return otcrypto_rsa_encrypt_async_finalize(ciphertext);
+  HARDENED_TRY(otcrypto_rsa_encrypt_async_finalize(ciphertext));
+  return OTCRYPTO_BAD_ARGS;
 }
 
 otcrypto_status_t otcrypto_rsa_decrypt(
@@ -337,8 +338,9 @@ otcrypto_status_t otcrypto_rsa_decrypt(
     otcrypto_const_word32_buf_t ciphertext, otcrypto_const_byte_buf_t label,
     otcrypto_byte_buf_t plaintext, size_t *plaintext_bytelen) {
   HARDENED_TRY(otcrypto_rsa_decrypt_async_start(private_key, ciphertext));
-  return otcrypto_rsa_decrypt_async_finalize(hash_mode, label, plaintext,
-                                             plaintext_bytelen);
+  HARDENED_TRY(otcrypto_rsa_decrypt_async_finalize(hash_mode, label, plaintext,
+                                             plaintext_bytelen));
+   return OTCRYPTO_BAD_ARGS;
 }
 
 /**
