@@ -26,6 +26,14 @@ def provisioning_exts_repo(name):
     )
 """
 
+_OTSCA_EXTS_TEMPLATE = """
+def otsca_exts_repo(name):
+    native.local_repository(
+        name = name,
+        path = "{otsca_exts_dir}",
+    )
+"""
+
 _BUILD = """
 exports_files(glob(["**"]))
 """
@@ -76,4 +84,20 @@ provisioning_exts_setup = repository_rule(
         ),
     },
     environ = ["PROV_EXTS_DIR"],
+)
+
+def _otsca_exts_setup_impl(rctx):
+    otsca_exts_dir = rctx.os.environ.get("OTSCA_EXTS_DIR", rctx.attr.dummy)
+    rctx.file("repos.bzl", _OTSCA_EXTS_TEMPLATE.format(otsca_exts_dir = otsca_exts_dir))
+    rctx.file("BUILD.bazel", _BUILD)
+
+otsca_exts_setup = repository_rule(
+    implementation = _otsca_exts_setup_impl,
+    attrs = {
+        "dummy": attr.string(
+            mandatory = True,
+            doc = "Location of the dummy ot-sca extensions directory.",
+        ),
+    },
+    environ = ["OTSCA_EXTS_DIR"],
 )
