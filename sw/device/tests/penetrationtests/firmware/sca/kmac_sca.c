@@ -483,7 +483,8 @@ status_t handle_kmac_pentest_init(ujson_t *uj) {
       uj_cpuctrl_data.enable_sram_readback, &uj_output.clock_jitter_locked,
       &uj_output.clock_jitter_en, &uj_output.sram_main_readback_locked,
       &uj_output.sram_ret_readback_locked, &uj_output.sram_main_readback_en,
-      &uj_output.sram_ret_readback_en));
+      &uj_output.sram_ret_readback_en, uj_cpuctrl_data.enable_data_ind_timing,
+      &uj_output.data_ind_timing_en));
 
   // Setup the trigger.
   pentest_init(kPentestTriggerSourceKmac,
@@ -756,7 +757,8 @@ status_t handle_kmac_sca_batch_daisy_chain(ujson_t *uj) {
     memcpy(kmac_key.share0, uj_key.key, kKeyLength);
 
     pentest_set_trigger_high();
-    if (sha3_ujson_absorb(message_buf, KMACSCA_CMD_MAX_MSG_BYTES) != kmacScaOk) {
+    if (sha3_ujson_absorb(message_buf, KMACSCA_CMD_MAX_MSG_BYTES) !=
+        kmacScaOk) {
       return ABORTED();
     }
     pentest_set_trigger_low();
@@ -765,7 +767,7 @@ status_t handle_kmac_sca_batch_daisy_chain(ujson_t *uj) {
     if (kmac_get_digest(out, kDigestLength) != kmacScaOk) {
       return ABORTED();
     }
-    
+
     // Copy the output to the input.
     memcpy(message_buf, (uint8_t *)out, KMACSCA_CMD_MAX_MSG_BYTES);
   }
