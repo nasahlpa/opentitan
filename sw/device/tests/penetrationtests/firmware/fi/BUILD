@@ -11,6 +11,7 @@ cc_library(
     deps = [
         "//hw/ip/aes/data:aes_c_regs",
         "//hw/ip/kmac/data:kmac_c_regs",
+        "//hw/ip/hmac/data:hmac_c_regs",
         "//sw/device/lib/base:abs_mmio",
         "//sw/device/lib/base:memory",
         "//sw/device/lib/base:status",
