@@ -236,9 +236,6 @@ static status_t aes_encrypt(const uint8_t *plaintext, size_t plaintext_len) {
   } while (!ready);
 
   dif_aes_data_t data;
-  if (plaintext_len != sizeof(data.data)) {
-    return ABORTED();
-  }
   memcpy(data.data, plaintext, plaintext_len);
   TRY(dif_aes_load_data(&aes, data));
 
@@ -274,6 +271,10 @@ static status_t aes_send_ciphertext(bool only_first_word, ujson_t *uj) {
 
   dif_aes_data_t ciphertext;
   if (dif_aes_read_output(&aes, &ciphertext) != kDifOk) {
+    LOG_INFO("Wrong parameters given");
+    aes_sca_empty_t uj_output;
+    uj_output.success = false;
+    RESP_OK(ujson_serialize_aes_sca_empty_t, uj, &uj_output);
     return OUT_OF_RANGE();
   }
 
@@ -401,6 +402,10 @@ status_t handle_aes_sca_batch_alternative_encrypt(ujson_t *uj) {
     } while (!ready);
 
     if (dif_aes_read_output(&aes, &ciphertext)) {
+      LOG_INFO("Something went wrong reading the ciphertext");
+      aes_sca_empty_t uj_output;
+      uj_output.success = false;
+      RESP_OK(ujson_serialize_aes_sca_empty_t, uj, &uj_output);
       return ABORTED();
     }
 
@@ -611,14 +616,10 @@ status_t handle_aes_pentest_init(ujson_t *uj) {
                uj_sensor_data.sensor_ctrl_enable,
                uj_sensor_data.sensor_ctrl_en_fatal);
 
-  if (dif_aes_init(mmio_region_from_addr(TOP_EARLGREY_AES_BASE_ADDR), &aes) !=
-      kDifOk) {
-    return ABORTED();
-  }
+  CHECK_DIF_OK(
+      dif_aes_init(mmio_region_from_addr(TOP_EARLGREY_AES_BASE_ADDR), &aes));
 
-  if (dif_aes_reset(&aes) != kDifOk) {
-    return ABORTED();
-  }
+  CHECK_DIF_OK((dif_aes_reset(&aes) != kDifOk));
 
   // Configure the CPU for the pentest.
   penetrationtest_device_info_t uj_output;
@@ -672,10 +673,7 @@ status_t handle_aes_pentest_seed_lfsr(ujson_t *uj) {
 #if !OT_IS_ENGLISH_BREAKFAST
   if (transaction.force_masks) {
     LOG_INFO("Disabling masks.");
-    status_t res = aes_testutils_masking_prng_zero_output_seed();
-    if (res.value != 0) {
-      return ABORTED();
-    }
+    TRY(aes_testutils_masking_prng_zero_output_seed());
     // Load the magic seed into the PRNG. After this, the PRNG outputs
     // an all-zero vector.
     TRY(aes_sca_load_fixed_seed());
