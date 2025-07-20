@@ -2,7 +2,6 @@
   {
     "test_case_id": 1,
     "command": "Init",
-    "mode": "{\"fpga_mode\": 0}",
     "input": "{\"enable_icache\": true,\"enable_dummy_instr\": true,\"dummy_instr_count\": 3,\"enable_jittery_clock\": true,\"enable_sram_readback\": true, \"enable_data_ind_timing\": true}",
     "sensors": "{\"sensor_ctrl_enable\": true, \"sensor_ctrl_en_fatal\": [false, false, false, false, false, false, false, false, false, false, false]}",
     "expected_output": [

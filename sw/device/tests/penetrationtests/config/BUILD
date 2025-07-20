@@ -1,7 +1,7 @@
 config_setting(
     name = "env_silicon_owner_gb_rom_ext",
     define_values = {
-       "FW_ENV": "silicon_owner_gb_rom_ext",
+        "FW_ENV": "silicon_owner_gb_rom_ext",
     },
     visibility = ["//visibility:public"],
 )
@@ -17,7 +17,7 @@ config_setting(
 config_setting(
     name = "env_fpga_cw310_sival_rom_ext",
     define_values = {
-       "FW_ENV": "fpga_cw310_sival_rom_ext",
+        "FW_ENV": "fpga_cw310_sival_rom_ext",
     },
     visibility = ["//visibility:public"],
 )

@@ -39,10 +39,6 @@ UJSON_SERDE_STRUCT(CryptotestSha3ScaLfsr, cryptotest_sha3_sca_lfsr_t, SHA3_SCA_L
     field(data, uint8_t, SHA3SCA_CMD_MAX_DATA_BYTES)
 UJSON_SERDE_STRUCT(CryptotestSha3ScaData, cryptotest_sha3_sca_data_t, SHA3_SCA_DATA);
 
-#define SHA3_SCA_FPGA_MODE(field, string) \
-    field(fpga_mode, uint8_t)
-UJSON_SERDE_STRUCT(CryptotestSha3ScaFpgaMode, cryptotest_sha3_sca_fpga_mode_t, SHA3_SCA_FPGA_MODE);
-
 #define SHA3_SCA_MSG(field, string) \
     field(msg, uint8_t, SHA3SCA_CMD_MAX_MSG_BYTES) \
     field(msg_length, size_t)

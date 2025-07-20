@@ -21,7 +21,6 @@
 #include "sw/device/tests/penetrationtests/json/pentest_lib_commands.h"
 #include "sw/device/tests/penetrationtests/json/prng_sca_commands.h"
 #include "sw/device/tests/penetrationtests/json/sha3_sca_commands.h"
-#include "sw/device/tests/penetrationtests/json/trigger_sca_commands.h"
 
 // Include handlers
 #include "lib/extclk_sca_fi.h"
@@ -34,8 +33,6 @@
 #include "sca/otbn_sca.h"
 #include "sca/prng_sca.h"
 #include "sca/sha3_sca.h"
-#include "sca/trigger_sca.h"
-
 OTTF_DEFINE_TEST_CONFIG(.enable_uart_flow_control = true);
 
 status_t process_cmd(ujson_t *uj) {
@@ -72,9 +69,6 @@ status_t process_cmd(ujson_t *uj) {
         break;
       case kPenetrationtestCommandSha3Sca:
         RESP_ERR(uj, handle_sha3_sca(uj));
-        break;
-      case kPenetrationtestCommandTriggerSca:
-        RESP_ERR(uj, handle_trigger_sca(uj));
         break;
       default:
         LOG_ERROR("Unrecognized command: %d", cmd);

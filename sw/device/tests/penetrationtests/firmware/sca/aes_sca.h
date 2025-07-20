@@ -250,35 +250,6 @@ status_t handle_aes_pentest_init(ujson_t *uj);
 status_t handle_aes_sca_key_set(ujson_t *uj);
 
 /**
- * Seed lfsr command handler.
- *
- * This function only supports 4-byte seeds.
- * Enables/disables masking depending on seed value, i.e. 0 for disable.
- *
- * The uJSON data contains:
- *  - seed: A buffer holding the seed.
- *
- * @param uj An initialized uJSON context.
- * @return OK or error.
- */
-status_t handle_aes_pentest_seed_lfsr(ujson_t *uj);
-
-/**
- * Seed lfsr command handler.
- *
- * This function only supports 4-byte seeds.
- * Sets the seed for the LFSR used to determine the order of measurements
- * in fixed-vs-random-data dataset.
- *
- * The uJSON data contains:
- *  - seed: A buffer holding the seed.
- *
- * @param uj An initialized uJSON context.
- * @return OK or error.
- */
-status_t handle_aes_pentest_seed_lfsr_order(ujson_t *uj);
-
-/**
  * Single encrypt command handler.
  *
  * Encrypts a `kAesTextLength` bytes long plaintext using the AES peripheral and

@@ -81,7 +81,6 @@ status_t handle_rom_fi_init(ujson_t *uj) {
   penetrationtest_alert_config_t uj_alert_data;
   TRY(ujson_deserialize_penetrationtest_alert_config_t(uj, &uj_alert_data));
 
-  pentest_select_trigger_type(kPentestTriggerTypeSw);
   pentest_init(kPentestTriggerSourceAes,
                kPentestPeripheralIoDiv4 | kPentestPeripheralEdn |
                    kPentestPeripheralCsrng | kPentestPeripheralEntropy |

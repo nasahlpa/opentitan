@@ -23,11 +23,6 @@
 
 #include "hw/top_earlgrey/sw/autogen/top_earlgrey.h"
 
-/**
- * Enable FPGA mode.
- */
-static bool fpga_mode = false;
-
 enum {
   kAesKeyLengthMax = 32,
   kAesKeyLength = 16,
@@ -243,20 +238,10 @@ static status_t aes_encrypt(const uint8_t *plaintext, size_t plaintext_len) {
   TRY(dif_aes_load_data(&aes, data));
 
   // Start AES operation (this triggers the capture) and go to sleep.
-  if (fpga_mode) {
-    // On FPGA, the trigger is AND-ed with AES !IDLE and creates a LO-HI-LO per.
-    // Activate the GPIO by setting the GPIO.
-    pentest_set_trigger_high();
-    pentest_call_and_sleep(aes_manual_trigger, kIbexAesSleepCycles, false,
-                           false);
-    pentest_set_trigger_low();
-  } else {
-    // On the chip, we need to manually set and unset the trigger. This is done
-    // in this function to have the trigger as close as possible to the AES
-    // operation.
-    pentest_call_and_sleep(aes_manual_trigger, kIbexAesSleepCycles, true,
-                           false);
-  }
+  // On the chip, we need to manually set and unset the trigger. This is done
+  // in this function to have the trigger as close as possible to the AES
+  // operation.
+  pentest_call_and_sleep(aes_manual_trigger, kIbexAesSleepCycles, true, false);
   return OK_STATUS();
 }
 
@@ -594,13 +579,6 @@ status_t handle_aes_sca_fvsr_key_start_batch_generate(ujson_t *uj) {
 }
 
 status_t handle_aes_pentest_init(ujson_t *uj) {
-  // Read mode. FPGA or discrete.
-  aes_sca_fpga_mode_t uj_data;
-  TRY(ujson_deserialize_aes_sca_fpga_mode_t(uj, &uj_data));
-  if (uj_data.fpga_mode == 0x01) {
-    fpga_mode = true;
-  }
-
   penetrationtest_cpuctrl_t uj_cpuctrl_data;
   TRY(ujson_deserialize_penetrationtest_cpuctrl_t(uj, &uj_cpuctrl_data));
   penetrationtest_sensor_config_t uj_sensor_data;

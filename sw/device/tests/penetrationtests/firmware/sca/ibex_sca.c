@@ -140,8 +140,6 @@ status_t handle_ibex_pentest_init(ujson_t *uj) {
   penetrationtest_sensor_config_t uj_sensor_data;
   TRY(ujson_deserialize_penetrationtest_sensor_config_t(uj, &uj_sensor_data));
 
-  // Setup trigger and enable peripherals needed for the test.
-  pentest_select_trigger_type(kPentestTriggerTypeSw);
   pentest_init(kPentestTriggerSourceAes,
                kPentestPeripheralEntropy | kPentestPeripheralIoDiv4 |
                    kPentestPeripheralOtbn | kPentestPeripheralCsrng |

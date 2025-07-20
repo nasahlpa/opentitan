@@ -38,10 +38,6 @@ UJSON_SERDE_STRUCT(CryptotestKmacScaKey, cryptotest_kmac_sca_key_t, KMAC_SCA_KEY
     field(seed, uint8_t, KMACSCA_CMD_MAX_LFSR_BYTES)
 UJSON_SERDE_STRUCT(CryptotestKmacScaLfsr, cryptotest_kmac_sca_lfsr_t, KMAC_SCA_LFSR);
 
-#define KMAC_SCA_FPGA_MODE(field, string) \
-    field(fpga_mode, uint8_t)
-UJSON_SERDE_STRUCT(CryptotestKmacScaFpgaMode, cryptotest_kmac_sca_fpga_mode_t, KMAC_SCA_FPGA_MODE);
-
 #define KMAC_SCA_DATA(field, string) \
     field(data, uint8_t, KMACSCA_CMD_MAX_DATA_BYTES)
 UJSON_SERDE_STRUCT(CryptotestKmacScaData, cryptotest_kmac_sca_data_t, KMAC_SCA_DATA);

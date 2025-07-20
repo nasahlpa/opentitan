@@ -253,8 +253,8 @@ cc_library(
         "//sw/device/sca/lib:prng",
         "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
         "//sw/device/tests/penetrationtests/firmware/sca/otbn:otbn_insn_carry_flag",
-        "//sw/device/tests/penetrationtests/firmware/sca/otbn:otbn_key_sideload_sca",
         "//sw/device/tests/penetrationtests/firmware/sca/otbn:otbn_insn_combi_ops",
+        "//sw/device/tests/penetrationtests/firmware/sca/otbn:otbn_key_sideload_sca",
         "//sw/device/tests/penetrationtests/json:otbn_sca_commands",
         "//sw/otbn/crypto:p256_ecdsa_sca",
         "//sw/otbn/crypto:rsa",
@@ -291,20 +291,5 @@ cc_library(
         "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
         "//sw/device/tests/penetrationtests/json:commands",
         "//sw/device/tests/penetrationtests/json:sha3_sca_commands",
-    ],
-)
-
-cc_library(
-    name = "trigger_sca",
-    srcs = ["trigger_sca.c"],
-    hdrs = ["trigger_sca.h"],
-    deps = [
-        "//sw/device/lib/base:memory",
-        "//sw/device/lib/base:status",
-        "//sw/device/lib/runtime:log",
-        "//sw/device/lib/testing/test_framework:ujson_ottf",
-        "//sw/device/lib/ujson",
-        "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
-        "//sw/device/tests/penetrationtests/json:trigger_sca_commands",
     ],
 )

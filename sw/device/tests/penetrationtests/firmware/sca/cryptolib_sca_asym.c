@@ -670,7 +670,6 @@ status_t handle_cryptolib_sca_asym_init(ujson_t *uj) {
   penetrationtest_alert_config_t uj_alert_data;
   TRY(ujson_deserialize_penetrationtest_alert_config_t(uj, &uj_alert_data));
 
-  pentest_select_trigger_type(kPentestTriggerTypeSw);
   // As we are using the software defined trigger, the first argument of
   // pentest_init is not needed. kPentestTriggerSourceAes is selected as a
   // placeholder.

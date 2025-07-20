@@ -61,11 +61,6 @@ enum {
 };
 
 /**
- * Enable FPGA mode.
- */
-static bool fpga_mode = false;
-
-/**
  * A handle to KMAC.
  */
 static dif_kmac_t kmac;
@@ -446,13 +441,6 @@ kmac_sca_error_t kmac_get_digest(uint32_t *out, size_t len) {
  * This function configures KMAC to use software entropy.
  */
 status_t handle_kmac_pentest_init(ujson_t *uj) {
-  // Read mode. FPGA or discrete.
-  cryptotest_kmac_sca_fpga_mode_t uj_data;
-  TRY(ujson_deserialize_cryptotest_kmac_sca_fpga_mode_t(uj, &uj_data));
-  if (uj_data.fpga_mode == 0x01) {
-    fpga_mode = true;
-  }
-
   penetrationtest_cpuctrl_t uj_cpuctrl_data;
   TRY(ujson_deserialize_penetrationtest_cpuctrl_t(uj, &uj_cpuctrl_data));
   penetrationtest_sensor_config_t uj_sensor_data;
@@ -537,19 +525,7 @@ status_t handle_kmac_sca_set_key(ujson_t *uj) {
 
 /**
  * Absorbs a message using KMAC128 without a customization string.
- *
- * Two modes are supported: FPGA and non-FPGA mode.
- * The FPGA mode can be used to improve KMAC SCA. Here, features only available
- * on the FPGA bitstream are used (i.e., SecKmacCmdDelay and
- * SecKmacIdleAcceptSwMsg). The non-FPGA mode represents the chip where these
- * features are disabled.
- *
- * In the FPGA mode, this function performs:
- * - Configure mode/key/...
- * - Write data to the message FIFO.
- * - Send START and PROCESS commands, put Ibex into sleep.
- *
- * In the non-FPGA mode, this function performs:
+ * This function performs:
  * - Configure mode/key/...
  * - Send START command, put Ibex into sleep.
  * - Write message FIFO.
@@ -565,32 +541,20 @@ static kmac_sca_error_t sha3_ujson_absorb(const uint8_t *msg, size_t msg_len) {
     return kmacScaAborted;
   }
 
-  if (fpga_mode == false) {
-    // Start command. On the chip, we need to first issue a START command
-    // before writing to the message FIFO.
-    pentest_call_and_sleep(kmac_start_cmd, kIbexLoadHashPrefixKeySleepCycles,
-                           false, false);
-  }
+  // Start command. On the chip, we need to first issue a START command
+  // before writing to the message FIFO.
+  pentest_call_and_sleep(kmac_start_cmd, kIbexLoadHashPrefixKeySleepCycles,
+                         false, false);
 
   // Write data to message FIFO.
   if (kmac_msg_write(msg, msg_len, NULL) != kmacScaOk) {
     return kmacScaAborted;
   }
 
-  if (fpga_mode) {
-    // On the FPGA, start the SHA3 processing (this triggers the capture) and
-    // go to sleep. Using the SecCmdDelay hardware parameter, the KMAC unit is
-    // configured to start operation 320 cycles after receiving the START and
-    // PROC commands. This allows Ibex to go to sleep in order to not disturb
-    // the capture.
-    pentest_call_and_sleep(kmac_start_process_cmd, kIbexSha3SleepCycles, false,
-                           false);
-  } else {
-    // On the chip, issue a PROCESS command to start operation and put Ibex
-    // into sleep.
-    pentest_call_and_sleep(kmac_process_cmd, kIbexLoadHashMessageSleepCycles,
-                           false, false);
-  }
+  // On the chip, issue a PROCESS command to start operation and put Ibex
+  // into sleep.
+  pentest_call_and_sleep(kmac_process_cmd, kIbexLoadHashMessageSleepCycles,
+                         false, false);
 
   return kmacScaOk;
 }

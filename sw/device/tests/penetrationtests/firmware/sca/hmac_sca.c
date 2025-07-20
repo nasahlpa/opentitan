@@ -105,10 +105,6 @@ status_t handle_hmac_pentest_init(ujson_t *uj) {
   penetrationtest_sensor_config_t uj_sensor_data;
   TRY(ujson_deserialize_penetrationtest_sensor_config_t(uj, &uj_sensor_data));
 
-  // Setup trigger and enable peripherals needed for the test.
-  pentest_select_trigger_type(kPentestTriggerTypeSw);
-
-  // Disable the instruction cache and dummy instructions for SCA.
   penetrationtest_device_info_t uj_output;
   TRY(pentest_configure_cpu(
       uj_cpuctrl_data.enable_icache, &uj_output.icache_en,

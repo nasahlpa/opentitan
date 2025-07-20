@@ -54,11 +54,6 @@ enum {
 };
 
 /**
- * Enable FPGA mode.
- */
-static bool fpga_mode = false;
-
-/**
  * A handle to KMAC.
  */
 static dif_kmac_t kmac;
@@ -399,31 +394,19 @@ sha3_sca_error_t sha3_serial_absorb(const uint8_t *msg, size_t msg_len) {
     return sha3ScaAborted;
   }
 
-  if (fpga_mode == false) {
-    // Start command. On the chip, we need to first issue a START command
-    // before writing to the message FIFO.
-    kmac_start_cmd();
-  }
+  // Start command. On the chip, we need to first issue a START command
+  // before writing to the message FIFO.
+  kmac_start_cmd();
 
   // Write data to message FIFO.
   if (sha3_msg_write(msg, msg_len, NULL) != kDifOk) {
     return sha3ScaAborted;
   }
 
-  if (fpga_mode) {
-    // Start the SHA3 processing (this triggers the capture) and go to sleep.
-    // Using the SecCmdDelay hardware parameter, the KMAC unit is
-    // configured to start operation 320 cycles after receiving the START and
-    // PROC commands. This allows Ibex to go to sleep in order to not disturb
-    // the capture.
-    pentest_call_and_sleep(kmac_start_process_cmd, kIbexSha3SleepCycles, true,
-                           false);
-  } else {
-    // On the chip, issue a PROCESS command to start operation and put Ibex
-    // into sleep.
-    pentest_call_and_sleep(kmac_process_cmd, kIbexLoadHashMessageSleepCycles,
-                           true, false);
-  }
+  // On the chip, issue a PROCESS command to start operation and put Ibex
+  // into sleep.
+  pentest_call_and_sleep(kmac_process_cmd, kIbexLoadHashMessageSleepCycles,
+                         true, false);
 
   return sha3ScaOk;
 }
@@ -586,13 +569,6 @@ status_t handle_sha3_pentest_seed_lfsr(ujson_t *uj) {
  * @param uj The received uJSON data.
  */
 status_t handle_sha3_pentest_init(ujson_t *uj) {
-  // Read mode. FPGA or discrete.
-  cryptotest_sha3_sca_fpga_mode_t uj_data;
-  TRY(ujson_deserialize_cryptotest_sha3_sca_fpga_mode_t(uj, &uj_data));
-  if (uj_data.fpga_mode == 0x01) {
-    fpga_mode = true;
-  }
-
   penetrationtest_cpuctrl_t uj_cpuctrl_data;
   TRY(ujson_deserialize_penetrationtest_cpuctrl_t(uj, &uj_cpuctrl_data));
   penetrationtest_sensor_config_t uj_sensor_data;

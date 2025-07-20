@@ -1236,7 +1236,6 @@ status_t handle_otbn_fi_init(ujson_t *uj) {
   // to avoid a non-constant trigger window.
   TRY(pentest_configure_entropy_source_max_reseed_interval());
 
-  pentest_select_trigger_type(kPentestTriggerTypeSw);
   pentest_init(kPentestTriggerSourceOtbn,
                kPentestPeripheralIoDiv4 | kPentestPeripheralEdn |
                    kPentestPeripheralCsrng | kPentestPeripheralEntropy |

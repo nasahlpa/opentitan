@@ -121,8 +121,6 @@ status_t handle_edn_sca_init(ujson_t *uj) {
   penetrationtest_sensor_config_t uj_sensor_data;
   TRY(ujson_deserialize_penetrationtest_sensor_config_t(uj, &uj_sensor_data));
 
-  pentest_select_trigger_type(kPentestTriggerTypeSw);
-
   // Disable the instruction cache and dummy instructions for SCA attacks.
   penetrationtest_device_info_t uj_output;
   TRY(pentest_configure_cpu(
