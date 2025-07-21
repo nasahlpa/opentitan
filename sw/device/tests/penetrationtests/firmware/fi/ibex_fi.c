@@ -2127,7 +2127,7 @@ status_t handle_ibex_fi_char_csr_combi(ujson_t *uj) {
   abs_mmio_write32(TOP_EARLGREY_HMAC_BASE_ADDR + HMAC_CFG_REG_OFFSET, cfg);
 
   // Make explicit register variables for the test
-  register volatile uint32_t reg_x9  asm("x9");
+  register volatile uint32_t reg_x9 asm("x9");
   register volatile uint32_t reg_x19 asm("x19");
   register volatile uint32_t reg_x29 asm("x29");
 
