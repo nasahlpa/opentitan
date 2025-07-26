@@ -162,7 +162,7 @@ qemu_opentitan_repos()
 
 # Setup for linking in externally managed test and provisioning customizations
 # for both secure/non-secure manufacturer domains.
-load("//rules:hooks_setup.bzl", "hooks_setup", "provisioning_exts_setup", "otsca_exts_setup", "secure_hooks_setup")
+load("//rules:hooks_setup.bzl", "hooks_setup", "provisioning_exts_setup", "otsca_exts_setup", "kss_signer_setup", "secure_hooks_setup")
 hooks_setup(
     name = "hooks_setup",
     dummy = "sw/device/tests/closed_source",
@@ -179,6 +179,10 @@ otsca_exts_setup(
     name = "otsca_exts_setup",
     dummy = "sw/device/tests/penetrationtests/extensions",
 )
+kss_signer_setup(
+    name = "kss_signer_setup",
+    dummy = "signing/extensions",
+)
 
 # Declare the external repositories:
 #  - One for both manufacturer secure and non-secure domains.
@@ -187,10 +191,12 @@ load("@hooks_setup//:repos.bzl", "hooks_repo")
 load("@secure_hooks_setup//:repos.bzl", "secure_hooks_repo")
 load("@provisioning_exts_setup//:repos.bzl", "provisioning_exts_repo")
 load("@otsca_exts_setup//:repos.bzl", "otsca_exts_repo")
+load("@kss_signer_setup//:repos.bzl", "kss_signer")
 hooks_repo(name = "manufacturer_test_hooks")
 secure_hooks_repo(name = "secure_manufacturer_test_hooks")
 provisioning_exts_repo(name = "provisioning_exts")
 otsca_exts_repo(name = "otsca_exts")
+kss_signer(name = "kss_signer")
 
 # The nonhermetic_repo imports environment variables needed to run vivado.
 load("//rules:nonhermetic.bzl", "nonhermetic_repo")

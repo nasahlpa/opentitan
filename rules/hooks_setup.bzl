@@ -34,6 +34,14 @@ def otsca_exts_repo(name):
     )
 """
 
+_KSS_SIGNER_TEMPLATE = """
+def kss_signer(name):
+    native.local_repository(
+        name = name,
+        path = "{kss_signer_dir}",
+    )
+"""
+
 _BUILD = """
 exports_files(glob(["**"]))
 """
@@ -100,4 +108,20 @@ otsca_exts_setup = repository_rule(
         ),
     },
     environ = ["OTSCA_EXTS_DIR"],
+)
+
+def _kss_signer_setup_impl(rctx):
+    kss_signer_dir = rctx.os.environ.get("KSS_SIGNER_DIR", rctx.attr.dummy)
+    rctx.file("repos.bzl", _KSS_SIGNER_TEMPLATE.format(kss_signer_dir = kss_signer_dir))
+    rctx.file("BUILD.bazel", _BUILD)
+
+kss_signer_setup = repository_rule(
+    implementation = _kss_signer_setup_impl,
+    attrs = {
+        "dummy": attr.string(
+            mandatory = True,
+            doc = "Location of the dummy kss signer directory.",
+        ),
+    },
+    environ = ["KSS_SIGNER_DIR"],
 )

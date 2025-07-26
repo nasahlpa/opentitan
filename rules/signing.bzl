@@ -524,7 +524,7 @@ def _hsmtool_sign(ctx, tool, digest, ecdsa_key, rsa_key, spxmsg = None, spx_key 
         fail("Expected an ECDSA or RSA key")
 
 def ecdsa_key_uses_kss(ecdsa_key):
-    return ecdsa_key and "kss_tool_path" in ecdsa_key.config
+    return ecdsa_key and "kss" in ecdsa_key.name
 
 def _kss_sign(ctx, tool, digest, ecdsa_key, rsa_key, spxmsg = None, spx_key = None, profile = None):
     if rsa_key:
@@ -552,7 +552,7 @@ def _kss_sign(ctx, tool, digest, ecdsa_key, rsa_key, spxmsg = None, spx_key = No
                 "--use_prod_kss_backend={}".format(prod_back_end),
                 "--build_target={}".format(ecdsa_key.config["key_variant"]),
             ],
-            executable = ecdsa_key.config["kss_tool_path"],
+            executable = tool.tool,
             execution_requirements = {
                 "no-sandbox": "1",
                 "no-cache": "1",
@@ -584,7 +584,7 @@ def _kss_sign(ctx, tool, digest, ecdsa_key, rsa_key, spxmsg = None, spx_key = No
                 "--use_prod_kss_backend={}".format(prod_back_end),
                 "--build_target={}".format(spx_key.config["key_variant"]),
             ],
-            executable = spx_key.config["kss_tool_path"],
+            executable = tool.tool,
             execution_requirements = {
                 "no-sandbox": "1",
                 "no-cache": "1",
