@@ -183,6 +183,7 @@ otsca_exts_setup(
 # Declare the external repositories:
 #  - One for both manufacturer secure and non-secure domains.
 #  - One for provisioning source code extensions.
+#  - One for the testOS host-side source code extensions.
 load("@hooks_setup//:repos.bzl", "hooks_repo")
 load("@secure_hooks_setup//:repos.bzl", "secure_hooks_repo")
 load("@provisioning_exts_setup//:repos.bzl", "provisioning_exts_repo")
@@ -191,6 +192,10 @@ hooks_repo(name = "manufacturer_test_hooks")
 secure_hooks_repo(name = "secure_manufacturer_test_hooks")
 provisioning_exts_repo(name = "provisioning_exts")
 otsca_exts_repo(name = "otsca_exts")
+
+# Install the extra Python dependencies for ot-sca
+load("@otsca_exts//third_party/python:requirements.bzl", install_otsca_python_deps="install_deps")
+install_otsca_python_deps(local_wheels_repo_target = "@ot_python_wheels//:sanitized_requirements.txt")
 
 # The nonhermetic_repo imports environment variables needed to run vivado.
 load("//rules:nonhermetic.bzl", "nonhermetic_repo")
