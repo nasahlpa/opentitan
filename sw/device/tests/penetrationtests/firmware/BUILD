@@ -38,6 +38,7 @@ FIRMWARE_DEPS_FI = [
     "//sw/device/tests/penetrationtests/firmware/fi:otp_fi",
     "//sw/device/tests/penetrationtests/firmware/fi:rng_fi",
     "//sw/device/tests/penetrationtests/firmware/fi:rom_fi",
+    "//sw/device/tests/penetrationtests/firmware/fi:alert_fi",
     "//sw/device/tests/penetrationtests/firmware/lib:extclk_sca_fi",
     "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
     "//sw/device/lib/base:csr",
