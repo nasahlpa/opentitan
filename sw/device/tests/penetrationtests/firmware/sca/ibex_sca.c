@@ -22,6 +22,8 @@
 #include "sw/device/tests/penetrationtests/firmware/lib/pentest_lib.h"
 #include "sw/device/tests/penetrationtests/json/ibex_sca_commands.h"
 
+#include "sw/device/tests/crypto/aes_gcm_testutils.h"
+
 #include "hw/top_earlgrey/sw/autogen/top_earlgrey.h"
 #include "otbn_regs.h"  // Generated.
 
@@ -1041,6 +1043,51 @@ status_t handle_ibex_sca_tl_write_batch_random_fix_address(ujson_t *uj) {
   return OK_STATUS();
 }
 
+status_t handle_ibex_sca_gcm(ujson_t *uj) {
+  ibex_sca_batch_t uj_data;
+  TRY(ujson_deserialize_ibex_sca_batch_t(uj, &uj_data));
+
+  aes_gcm_test_t kAesGcmTestvectors[256];
+
+  static const uint32_t key_fixed[4] = {0x676e0af8, 0x37871c21, 0x899da993, 0xe7c2319c};
+
+  bool sample_fixed = true;
+  for (size_t it = 0; it < uj_data.num_iterations; it++) {
+    kAesGcmTestvectors[it].key_len = ARRAYSIZE(key_fixed);
+    kAesGcmTestvectors[it].iv_len = 12;
+    kAesGcmTestvectors[it].plaintext_len = 0;
+    kAesGcmTestvectors[it].plaintext = NULL;
+    kAesGcmTestvectors[it].aad_len = 0;
+    kAesGcmTestvectors[it].aad = NULL;
+    kAesGcmTestvectors[it].ciphertext = NULL;
+    kAesGcmTestvectors[it].tag_len = 16;
+
+    if (sample_fixed) {
+      kAesGcmTestvectors[it].key = key_fixed;
+    } else {
+      const uint32_t key[4] = {prng_rand_uint32(), prng_rand_uint32(), prng_rand_uint32(), prng_rand_uint32()};
+      kAesGcmTestvectors[it].key = key;
+    }
+    sample_fixed = prng_rand_uint32() & 0x1;
+  }
+
+  for (size_t it = 0; it < uj_data.num_iterations; it++) {
+    for (int i = 0; i < 12; i++) {
+      kAesGcmTestvectors[it].iv[i] = prng_rand_byte();
+    }
+  }
+
+  for (size_t it = 0; it < uj_data.num_iterations; it++) {
+    uint32_t cycles;
+    TRY(aes_gcm_testutils_encrypt(&kAesGcmTestvectors[it], /*streaming=*/false, &cycles));
+  }
+
+  ibex_sca_gcm_t uj_output;
+  memcpy(uj_output.iv, (uint8_t *)kAesGcmTestvectors[uj_data.num_iterations - 1].iv, 12);
+  RESP_OK(ujson_serialize_ibex_sca_gcm_t, uj, &uj_output);
+  return OK_STATUS();
+}
+
 status_t handle_ibex_sca(ujson_t *uj) {
   ibex_sca_subcommand_t cmd;
   TRY(ujson_deserialize_ibex_sca_subcommand_t(uj, &cmd));
@@ -1085,6 +1132,8 @@ status_t handle_ibex_sca(ujson_t *uj) {
       return handle_ibex_sca_tl_write_batch_random(uj);
     case kIbexScaSubcommandTLWriteBatchRandomFixAddress:
       return handle_ibex_sca_tl_write_batch_random_fix_address(uj);
+    case kIbexScaSubcommandGcm:
+      return handle_ibex_sca_gcm(uj);
     default:
       LOG_ERROR("Unrecognized IBEX SCA subcommand: %d", cmd);
       return INVALID_ARGUMENT();

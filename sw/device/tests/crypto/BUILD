@@ -156,7 +156,10 @@ cc_library(
 opentitan_test(
     name = "aes_gcm_functest",
     srcs = ["aes_gcm_functest.c"],
-    exec_env = CRYPTOTEST_EXEC_ENVS,
+    exec_env = {
+        "//hw/top_earlgrey:fpga_cw340_sival_rom_ext": None,
+        "//hw/top_earlgrey:sim_verilator": None,
+    },
     verilator = verilator_params(
         timeout = "eternal",
         # This test can take > 60 minutes, so mark it manual as it shouldn't

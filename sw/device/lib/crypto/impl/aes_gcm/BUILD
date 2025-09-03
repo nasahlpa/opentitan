@@ -27,6 +27,7 @@ cc_library(
         "//sw/device/lib/base:macros",
         "//sw/device/lib/base:memory",
         "//sw/device/lib/crypto/drivers:rv_core_ibex",
+        "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
     ],
 )
 

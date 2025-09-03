@@ -196,6 +196,7 @@ cc_library(
         "//sw/device/sca/lib:prng",
         "//sw/device/tests/penetrationtests/firmware/lib:pentest_lib",
         "//sw/device/tests/penetrationtests/json:ibex_sca_commands",
+        "//sw/device/tests/crypto:aes_gcm_testutils",
     ],
 )
 

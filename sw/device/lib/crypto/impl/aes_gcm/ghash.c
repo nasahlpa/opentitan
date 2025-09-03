@@ -8,6 +8,7 @@
 #include "sw/device/lib/base/macros.h"
 #include "sw/device/lib/base/memory.h"
 #include "sw/device/lib/crypto/drivers/rv_core_ibex.h"
+#include "sw/device/tests/penetrationtests/firmware/lib/pentest_lib.h"
 
 // Module ID for status codes.
 #define MODULE_ID MAKE_MODULE_ID('g', 'h', 'a')
@@ -272,7 +273,13 @@ static void ghash_process_block(ghash_context_t *ctx, ghash_block_t *block) {
     hardened_memcpy(s1_tmp.data, block->data, kGhashBlockNumWords);
     hardened_xor_in_place(s1_tmp.data, ctx->enc_initial_counter_block1.data,
                           kGhashBlockNumWords);
+    ibex_clear_rf();
+    pentest_set_trigger_high();
+    asm volatile(NOP10);
+    asm volatile(NOP10);
+    asm volatile(NOP10);
     s1_tmp = galois_mul_state_key(s1_tmp, ctx->tbl1);
+    pentest_set_trigger_low();
 
     // Apply the correction terms for state share 1.
     // share1 = share1_tmp + correction_term1

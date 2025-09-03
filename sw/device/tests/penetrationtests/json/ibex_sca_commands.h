@@ -31,7 +31,8 @@ extern "C" {
     value(_, TLWriteBatchFvsr) \
     value(_, TLWriteBatchFvsrFixAddress) \
     value(_, TLWriteBatchRandom) \
-    value(_, TLWriteBatchRandomFixAddress)
+    value(_, TLWriteBatchRandomFixAddress) \
+    value(_, Gcm)
 C_ONLY(UJSON_SERDE_ENUM(IbexScaSubcommand, ibex_sca_subcommand_t, IBEXSCA_SUBCOMMAND));
 RUST_ONLY(UJSON_SERDE_ENUM(IbexScaSubcommand, ibex_sca_subcommand_t, IBEXSCA_SUBCOMMAND, RUST_DEFAULT_DERIVE, strum::EnumString));
 
@@ -71,6 +72,10 @@ UJSON_SERDE_STRUCT(IbexScaTestBatchOps, ibex_sca_test_batch_ops_t, IBEXSCA_TEST_
 #define IBEXSCA_OPS_RESULT(field, string) \
     field(result, uint32_t, 12)
 UJSON_SERDE_STRUCT(IbexScaOpsResult, ibex_sca_ops_result_t, IBEXSCA_OPS_RESULT);
+
+#define IBEXSCA_GCM(field, string) \
+    field(iv, uint8_t, 12)
+UJSON_SERDE_STRUCT(IbexScaGcm, ibex_sca_gcm_t, IBEXSCA_GCM);
 
 // clang-format on
 
