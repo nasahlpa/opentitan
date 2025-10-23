@@ -4,6 +4,7 @@
 
 package(default_visibility = ["//visibility:public"])
 
+load("//rules:autogen.bzl", "autogen_cryptolib_info")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 
 # Export all headers.
@@ -79,6 +80,8 @@ cc_library(
     ],
     includes = ["."],
 )
+
+autogen_cryptolib_info(name = "cryptolib_info")
 
 pkg_files(
     name = "package",

@@ -10,6 +10,11 @@ package(default_visibility = ["//visibility:public"])
 exports_files(glob(["**"]))
 
 py_binary(
+    name = "cryptolib_info",
+    srcs = ["cryptolib_info.py"],
+)
+
+py_binary(
     name = "otbn_build",
     srcs = ["otbn_build.py"],
     imports = ["../hw/ip/otbn/util/"],
