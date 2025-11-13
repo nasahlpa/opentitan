@@ -1,0 +1,3 @@
+FaultGenerate {
+  NA [0,1] {PORT "tb.dut.u_eflash.gen_flash_cores[0].**"}
+}
