@@ -143,6 +143,38 @@ opentitan_test(
 )
 
 opentitan_test(
+    name = "pentest",
+    srcs = ["pentest.c"],
+    exec_env = dicts.add(
+        dicts.omit(
+            EARLGREY_TEST_ENVS,
+            [
+                "//hw/top_earlgrey:fpga_cw310_rom_with_fake_keys",
+                "//hw/top_earlgrey:fpga_cw310_sival_rom_ext",
+            ],
+        ),
+        EARLGREY_SILICON_OWNER_ROM_EXT_ENVS,
+        DARJEELING_TEST_ENVS,
+        {
+            "//hw/top_earlgrey:silicon_creator": None,
+        },
+    ),
+    qemu = qemu_params(
+        globals = {
+            "ot-aes.fast-mode": "false",
+        },
+    ),
+    deps = [
+        "//sw/device/lib/base:memory",
+        "//sw/device/lib/base:mmio",
+        "//sw/device/lib/runtime:log",
+        "//sw/device/lib/testing/test_framework:ottf_main",
+        "//sw/device/lib/dif:pinmux",
+        "//sw/device/lib/testing:pinmux_testutils",
+    ],
+)
+
+opentitan_test(
     name = "aes_interrupt_encryption_test",
     srcs = ["aes_interrupt_encryption_test.c"],
     exec_env = dicts.add(
