@@ -35,6 +35,7 @@ string_list_flag(
     build_setting_default = [
         "--threads",
         "4",
+        "--flatten",
     ],
 )
 
