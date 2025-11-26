@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <verilated.h>
 
+#include "Vchip_sim_tb___024root.h"
+
 // This is defined by Verilator and passed through the command line
 #ifndef VM_TRACE
 #define VM_TRACE 0
@@ -354,6 +356,12 @@ void VerilatorSimCtrl::Run() {
   unsigned long start_reset_cycle_ = initial_reset_delay_cycles_;
   unsigned long end_reset_cycle_ = start_reset_cycle_ + reset_duration_cycles_;
 
+  unsigned long trigger_window_start_;
+  unsigned long trigger_window_end_;
+  unsigned long trigger_window_duration_;
+
+  bool trigger_detected = false;
+
   while (1) {
     unsigned long cycle_ = time_ / 2;
 
@@ -371,6 +379,19 @@ void VerilatorSimCtrl::Run() {
            ++it) {
         (*it)->OnClock(time_);
       }
+    }
+
+    // Detect the trigger window.
+    if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 1 && trigger_detected == false) {
+      trigger_window_start_ = cycle_;
+      trigger_detected = true;
+      std::cout << "Trigger high at cycle: " << trigger_window_start_ << std::endl;
+    } else if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 0 && trigger_detected == true) {
+      trigger_window_end_ = cycle_;
+      trigger_detected = false;
+      std::cout << "Trigger low at cycle: " << trigger_window_start_ << std::endl;
+      trigger_window_duration_ = trigger_window_end_ - trigger_window_start_;
+      std::cout << "Trigger window cycles: " << trigger_window_duration_ << std::endl;
     }
 
     top_->eval();
