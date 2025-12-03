@@ -36,6 +36,7 @@ string_list_flag(
         "--threads",
         "4",
         "--flatten",
+        "--savable",
     ],
 )
 

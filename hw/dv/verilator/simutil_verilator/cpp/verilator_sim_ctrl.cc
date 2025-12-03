@@ -386,6 +386,7 @@ void VerilatorSimCtrl::Run() {
       trigger_window_start_ = cycle_;
       trigger_detected = true;
       std::cout << "Trigger high at cycle: " << trigger_window_start_ << std::endl;
+      SaveState();
     } else if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 0 && trigger_detected == true) {
       trigger_window_end_ = cycle_;
       trigger_detected = false;
@@ -488,4 +489,20 @@ void VerilatorSimCtrl::Trace() {
   }
 
   tracer_.dump(GetTime());
+}
+
+void VerilatorSimCtrl::SaveState() {
+    VerilatedSave os;
+    std::string file = "fi_sim_state.verilate";
+    os.open(file);
+    os << GetTime();
+    os << top_->dut();
+}
+
+void VerilatorSimCtrl::RestoreState() {
+    VerilatedRestore os;
+    std::string file = "fi_sim_state.verilate";
+    os.open(file);
+    os >> time_;
+    os >> top_->dut();
 }

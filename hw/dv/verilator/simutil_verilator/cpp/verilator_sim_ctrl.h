@@ -248,6 +248,16 @@ class VerilatorSimCtrl {
    * Perform tracing in Verilator if required
    */
   void Trace();
+
+  /**
+   * Save the current Verilator state.
+   */
+  void SaveState();
+
+   /**
+   * Restore the save Verilator state.
+   */
+  void RestoreState();
 };
 
 #endif  // OPENTITAN_HW_DV_VERILATOR_SIMUTIL_VERILATOR_CPP_VERILATOR_SIM_CTRL_H_
