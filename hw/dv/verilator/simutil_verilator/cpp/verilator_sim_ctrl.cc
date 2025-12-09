@@ -114,6 +114,12 @@ bool VerilatorSimCtrl::ParseCommandArgs(int argc, char **argv, bool &exit_app) {
       {"term-after-cycles", required_argument, nullptr, 'c'},
       {"trace", optional_argument, nullptr, 't'},
       {"help", no_argument, nullptr, 'h'},
+      {"fi-trigger-window", required_argument, nullptr, 'f'},
+      {"faulty-machine", required_argument, nullptr, 'm'},
+      {"fi-index", required_argument, nullptr, 'i'},
+      {"fi-bit", required_argument, nullptr, 'b'},
+      {"fi-dtype", required_argument, nullptr, 'd'},
+      {"fi-id", required_argument, nullptr, 'k'},
       {nullptr, no_argument, nullptr, 0}};
 
   while (1) {
@@ -150,6 +156,42 @@ bool VerilatorSimCtrl::ParseCommandArgs(int argc, char **argv, bool &exit_app) {
       case 'h':
         PrintHelp();
         exit_app = true;
+        break;
+      case 'f':
+        if (!read_ul_arg(&fi_trigger_window_, "fi-trigger-window", optarg)) {
+          exit_app = true;
+          return false;
+        }
+        break;
+      case 'm':
+        if (!read_ul_arg(&faulty_machine_, "faulty-machine", optarg)) {
+          exit_app = true;
+          return false;
+        }
+        break;
+      case 'i':
+        if (!read_ul_arg(&fault_index_, "fi-index", optarg)) {
+          exit_app = true;
+          return false;
+        }
+        break;
+      case 'b':
+        if (!read_ul_arg(&fault_bit_, "fi-bit", optarg)) {
+          exit_app = true;
+          return false;
+        }
+        break;
+      case 'd':
+        if (!read_ul_arg(&fault_dtype_, "fi-dtype", optarg)) {
+          exit_app = true;
+          return false;
+        }
+        break;
+      case 'k':
+        if (!read_ul_arg(&fault_id_, "fi-id", optarg)) {
+          exit_app = true;
+          return false;
+        }
         break;
       case ':':  // missing argument
         std::cerr << "ERROR: Missing argument." << std::endl << std::endl;
@@ -245,7 +287,13 @@ VerilatorSimCtrl::VerilatorSimCtrl()
       request_stop_(false),
       simulation_success_(true),
       tracer_(VerilatedTracer()),
-      term_after_cycles_(0) {
+      term_after_cycles_(0),
+      fi_trigger_window_(0),
+      faulty_machine_(0),
+      fault_index_(0),
+      fault_bit_(0),
+      fault_dtype_(0),
+      fault_id_(0) {
 }
 
 void VerilatorSimCtrl::RegisterSignalHandler() {
@@ -334,6 +382,170 @@ std::string VerilatorSimCtrl::GetTraceFileName() const {
   return trace_file_path_;
 }
 
+std::vector<CData *> VerilatorSimCtrl::FiTargetSignalsCData() {
+  std::vector<CData *> fault_signals_CData = {
+  };
+
+
+  return fault_signals_CData;
+}
+
+std::vector<SData *> VerilatorSimCtrl::FiTargetSignalsSData() {
+  std::vector<SData *> fault_signals_SData = {
+  };
+
+
+  return fault_signals_SData;
+}
+
+std::vector<IData *> VerilatorSimCtrl::FiTargetSignalsIData() {
+  std::vector<IData *> fault_signals_IData = {
+  };
+
+
+  return fault_signals_IData;
+}
+
+std::vector<QData *> VerilatorSimCtrl::FiTargetSignalsQData() {
+  std::vector<QData *> fault_signals_QData = {
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__1__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__2__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__3__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__4__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__5__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__6__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__7__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__8__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__9__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__10__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__11__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__12__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__13__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__14__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__15__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__16__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__17__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__18__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__19__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__20__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__21__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__22__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__23__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__24__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__25__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__31__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__26__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__27__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__28__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__29__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_rf_flops__BRA__30__KET____DOT__rf_reg_q,
+    &top_->dut().rootp->chip_sim_tb__DOT__u_dut__DOT__top_earlgrey__DOT__u_rv_core_ibex__DOT__u_core__DOT__gen_regfile_ff__DOT__register_file_i__DOT__g_dummy_r0__DOT__rf_r0_q
+  };
+
+
+  return fault_signals_QData;
+}
+
+void VerilatorSimCtrl::FiGmFindTriggerWindow(bool *trigger_detected_, unsigned long cycle_) {
+  if (faulty_machine_ == 0) {
+    // If we are executing the golden model, find the trigger high and low.
+    if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 1 && *trigger_detected_ == false) {
+      *trigger_detected_ = true;
+      // Print out the trigger high cycle - we are parsing it in the Python script.
+      std::cout << "Trigger high at cycle: " << cycle_ << std::endl;
+    } else if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 0 && *trigger_detected_ == true) {
+      *trigger_detected_ = false;
+      // Print out the trigger low cycle - we are parsing it in the Python script.
+      std::cout << "Trigger low at cycle: " << cycle_ << std::endl;
+    }
+  }
+}
+
+void VerilatorSimCtrl::FiFmSaveState(bool *fm_saved_, unsigned long *trigger_high_cycle_, unsigned long cycle_) {
+  if (faulty_machine_ == 1 && *fm_saved_ == false) {
+    if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 1) {
+      // Save the state at the trigger high.
+      SaveState();
+      *fm_saved_ = true;
+      *trigger_high_cycle_ = cycle_;
+    }
+  }
+}
+
+bool VerilatorSimCtrl::FiFmRestoreState(bool *fm_restore_state_, unsigned long *cycle_, unsigned long *trigger_delay_, unsigned long *fi_timeout_cycle_) {
+  if (faulty_machine_ == 1 && *fm_restore_state_ == true) {
+    // Restore the state after the test has completed.
+    *fm_restore_state_ = false;
+    RestoreState();
+    *cycle_ = time_ / 2;
+    *fi_timeout_cycle_ = *fi_timeout_cycle_ + (*fi_timeout_cycle_ * 0.2) + *cycle_;
+    *trigger_delay_ = *trigger_delay_ + 1;
+    if (*trigger_delay_ > fi_trigger_window_) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void VerilatorSimCtrl::FiFmDetectTestEnd(bool *fm_restore_state_, unsigned long cycle_, unsigned long trigger_high_cycle_, unsigned long *fi_timeout_cycle_, bool *fi_running) {
+  if (faulty_machine_ == 1) {
+    if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 2 && *fm_restore_state_ == false) {
+      std::cout << "Test end detected." << std::endl;
+      *fm_restore_state_ = true;
+      *fi_running = false;
+      *fi_timeout_cycle_ = cycle_ - trigger_high_cycle_;
+    }
+  }
+}
+
+bool VerilatorSimCtrl::FiFmCheckTimeout(unsigned long *cycle_, unsigned long fi_timeout_cycle_, unsigned long *trigger_delay_, bool *fi_running) {
+  if (faulty_machine_ == 1) {
+    if (*cycle_ > fi_timeout_cycle_ && *fi_running == true) {
+      std::cout << "DUT timed out, restoring state." << std::endl;
+      RestoreState();
+      *fi_running = false;
+      *cycle_ = time_ / 2;
+      *trigger_delay_ = *trigger_delay_ + 1;
+      if (*trigger_delay_ > fi_trigger_window_) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void VerilatorSimCtrl::FiInjectFault(unsigned long fi_trigger_delay, unsigned long trigger_high_cycle_, unsigned long cycle_, bool *fi_running, const std::vector<CData *> &fault_signals_cdata, const std::vector<SData *> &fault_signals_sdata, const std::vector<IData *> &fault_signals_idata, const std::vector<QData *> &fault_signals_qdata) {
+  if (faulty_machine_ == 1 && time_ % 2 == 0) {
+    // Check if the trigger is still high.
+    if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 1) {
+      // Check if we have reached the cycle we are aiming for.
+      unsigned long target_cycle_ = fi_trigger_delay + trigger_high_cycle_;
+      if (cycle_ == target_cycle_) {
+        *fi_running = true;
+        // Inject a fault at the given cycle and signal.
+        std::cout << "Injecting fault into signal (" << fault_dtype_ << "," << fault_index_ << "," << fault_bit_ << ") at cycle: " << cycle_ << std::endl;
+        uint64_t mask = 1 << fault_bit_;
+        switch(fault_dtype_) {
+          case 0:
+            *fault_signals_cdata[fault_index_] ^= (uint8_t)mask;
+            break;
+          case 1:
+            *fault_signals_sdata[fault_index_] ^= (uint16_t)mask;
+            break;
+          case 2:
+            *fault_signals_idata[fault_index_] ^= (uint32_t)mask;
+            break;
+          case 3:
+              *fault_signals_qdata[fault_index_] ^= (uint32_t)mask;
+            break;
+          default:
+            std::cout << "Invalid fault signal!" << std::endl;
+        }
+      }
+    }
+  }
+}
+
 void VerilatorSimCtrl::Run() {
   assert(top_ && "Use SetTop() first.");
 
@@ -356,11 +568,24 @@ void VerilatorSimCtrl::Run() {
   unsigned long start_reset_cycle_ = initial_reset_delay_cycles_;
   unsigned long end_reset_cycle_ = start_reset_cycle_ + reset_duration_cycles_;
 
-  unsigned long trigger_window_start_;
-  unsigned long trigger_window_end_;
-  unsigned long trigger_window_duration_;
+  unsigned long trigger_high_cycle_ = 0;
+  unsigned long fi_trigger_delay_ = 0;
+  unsigned long fi_max_cycle_ = 0;
+  unsigned long fi_timeout_cycle_ = 0;
+  bool terminate_ = false;
+  bool timeout_ = false;
 
-  bool trigger_detected = false;
+  bool gm_trigger_detected_ = false;
+  bool fm_saved_ = false;
+  bool fm_restore_state_ = false;
+  bool fm_fi_running = false;
+
+  std::vector<CData *> fault_signals_cdata = FiTargetSignalsCData();
+  std::vector<SData *> fault_signals_sdata = FiTargetSignalsSData();
+  std::vector<IData *> fault_signals_idata = FiTargetSignalsIData();
+  std::vector<QData *> fault_signals_qdata = FiTargetSignalsQData();
+
+  bool state_saved = false;
 
   while (1) {
     unsigned long cycle_ = time_ / 2;
@@ -381,19 +606,26 @@ void VerilatorSimCtrl::Run() {
       }
     }
 
-    // Detect the trigger window.
-    if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 1 && trigger_detected == false) {
-      trigger_window_start_ = cycle_;
-      trigger_detected = true;
-      std::cout << "Trigger high at cycle: " << trigger_window_start_ << std::endl;
-      SaveState();
-    } else if (top_->dut().rootp->chip_sim_tb__DOT__cio_gpio_d2p == 0 && trigger_detected == true) {
-      trigger_window_end_ = cycle_;
-      trigger_detected = false;
-      std::cout << "Trigger low at cycle: " << trigger_window_start_ << std::endl;
-      trigger_window_duration_ = trigger_window_end_ - trigger_window_start_;
-      std::cout << "Trigger window cycles: " << trigger_window_duration_ << std::endl;
-    }
+    // Find the trigger high and low trigger for the FI good machine.
+    FiGmFindTriggerWindow(&gm_trigger_detected_, cycle_);
+
+    // Check if the test is finished. If it is finished, restart it using the
+    // saved state.
+    FiFmDetectTestEnd(&fm_restore_state_, cycle_, trigger_high_cycle_, &fi_timeout_cycle_, &fm_fi_running);
+
+    // Find the trigger high and restore the state for the FI faulty machine.
+    terminate_ = FiFmRestoreState(&fm_restore_state_, &cycle_, &fi_trigger_delay_, &fi_timeout_cycle_);
+
+    // Find the trigger high and save the state for the faulty machine when we
+    // are executing for the first time.
+    FiFmSaveState(&fm_saved_, &trigger_high_cycle_, cycle_);
+
+    // Inject a fault at the given cycle.
+    FiInjectFault(fi_trigger_delay_, trigger_high_cycle_, cycle_, &fm_fi_running, fault_signals_cdata, fault_signals_sdata, fault_signals_idata, fault_signals_qdata);
+
+    // If the injected fault caused the CPU to halt, detect this and restore
+    // the saved state.
+    timeout_ = FiFmCheckTimeout(&cycle_, fi_timeout_cycle_, &fi_trigger_delay_, &fm_fi_running);
 
     top_->eval();
     time_++;
@@ -413,6 +645,12 @@ void VerilatorSimCtrl::Run() {
     if (term_after_cycles_ && (time_ / 2 >= term_after_cycles_)) {
       std::cout << "Simulation timeout of " << term_after_cycles_
                 << " cycles reached, shutting down simulation." << std::endl;
+      break;
+    }
+
+    if (terminate_ || timeout_) {
+      std::cout << "Received stop request from FI, shutting down simulation."
+                << std::endl;
       break;
     }
   }
@@ -493,7 +731,7 @@ void VerilatorSimCtrl::Trace() {
 
 void VerilatorSimCtrl::SaveState() {
     VerilatedSave os;
-    std::string file = "fi_sim_state.verilate";
+    std::string file = "fi_sim_state_" + std::to_string(fault_id_) + ".verilate";
     os.open(file);
     os << GetTime();
     os << top_->dut();
@@ -501,7 +739,7 @@ void VerilatorSimCtrl::SaveState() {
 
 void VerilatorSimCtrl::RestoreState() {
     VerilatedRestore os;
-    std::string file = "fi_sim_state.verilate";
+    std::string file = "fi_sim_state_" + std::to_string(fault_id_) + ".verilate";
     os.open(file);
     os >> time_;
     os >> top_->dut();

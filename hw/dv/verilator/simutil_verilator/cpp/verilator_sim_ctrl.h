@@ -121,6 +121,41 @@ class VerilatorSimCtrl {
    */
   unsigned long GetTime() const { return time_; }
 
+  /**
+   * Find the trigger high and low for the FI good machine.
+   *
+   * Prints out the trigger window that is parsed by the Python
+   * script.
+   */
+  void FiGmFindTriggerWindow(bool *trigger_detected_, unsigned long cycle_);
+
+  /**
+   * Save the state at the trigger high.
+   */
+  void FiFmSaveState(bool *fm_saved_,  unsigned long *trigger_high_cycle_, unsigned long cycle_);
+
+  /**
+   * Restores the previously saved state at the trigger.
+   */
+  bool FiFmRestoreState(bool *fm_restore_state_, unsigned long *cycle, unsigned long *fi_trigger_delay_, unsigned long *fi_timeout_cycle_);
+
+  /**
+   * Find the test end trigger.
+   */
+  void FiFmDetectTestEnd(bool *fm_restore_state_, unsigned long cycle_, unsigned long trigger_high_cycle_, unsigned long *fi_timeout_cycle_, bool *fi_running);
+
+  /**
+   * Handle the timeout caused by a FI.
+   * 
+   * Certain countermeasures can reset the chip. Detect this.
+   */
+  bool FiFmCheckTimeout(unsigned long *cycle_, unsigned long fi_timeout_cycle_, unsigned long *fi_trigger_delay_, bool *fi_running);
+
+  /**
+   * Inject a fault.
+   */
+  void FiInjectFault(unsigned long fi_trigger_delay_, unsigned long trigger_high_cycle_, unsigned long cycle_, bool *fi_running, const std::vector<CData *> &fault_signals_cdata, const std::vector<SData *> &fault_signals_sdata, const std::vector<IData *> &fault_signals_idata, const std::vector<QData *> &fault_signals_qdata);
+
  private:
   VerilatedToplevel *top_;
   CData *sig_clk_;
@@ -140,6 +175,12 @@ class VerilatorSimCtrl {
   std::chrono::steady_clock::time_point time_end_;
   VerilatedTracer tracer_;
   unsigned long term_after_cycles_;
+  unsigned long fi_trigger_window_;
+  unsigned long faulty_machine_;
+  unsigned long fault_index_;
+  unsigned long fault_bit_;
+  unsigned long fault_dtype_;
+  unsigned long fault_id_;
   std::vector<SimCtrlExtension *> extension_array_;
 
   /**
@@ -216,6 +257,34 @@ class VerilatorSimCtrl {
    * This function blocks until the simulation finishes.
    */
   void Run();
+
+  /**
+   * Get the list of fault injection targets.
+   *
+   * CData signals only.
+   */
+  std::vector<CData *> FiTargetSignalsCData();
+
+  /**
+   * Get the list of fault injection targets.
+   *
+   * SData signals only.
+   */
+  std::vector<SData *> FiTargetSignalsSData();
+
+  /**
+   * Get the list of fault injection targets.
+   *
+   * IData signals only.
+   */
+  std::vector<IData *> FiTargetSignalsIData();
+
+  /**
+   * Get the list of fault injection targets.
+   *
+   * QData signals only.
+   */
+  std::vector<QData *> FiTargetSignalsQData();
 
   /**
    * Get a name for this simulation
