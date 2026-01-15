@@ -583,6 +583,10 @@ class chip_sw_rv_core_ibex_lockstep_glitch_vseq extends chip_sw_base_vseq;
       endcase
     end
 
+    // Path to the alert_major_internal signal inside the lockstep.
+    alert_major_internal_path = $sformatf("%s.alert_major_internal_o", lockstep_path);
+    alert_major_internal = 1'b0;
+
     // The MuBi encoded enable_cmp_q signal is responsible for enabling/disabling the
     // lockstep comparison. Due to the encoding and the implemented enabling/disabling
     // logic, we tolerate a fault into this signal. Even when faulting this signal,
@@ -602,6 +606,13 @@ class chip_sw_rv_core_ibex_lockstep_glitch_vseq extends chip_sw_base_vseq;
     // Force the glitched value onto the port for one cycle, then release it again.
     `DV_CHECK_FATAL(uvm_hdl_force(glitch_path, glitched_val));
     `uvm_info(`gfn, $sformatf("Forcing %s to value 'h%0x.", glitch_path, glitched_val), UVM_LOW)
+    if (glitch_lockstep_core) begin
+      // A fault into the register file signals of the lockstep shadow core are detected by
+      // combinational logic. Hence, do not wait for the next clock cycle and immediately
+      // sample the alert_major_internal signal.
+      #1;
+      `DV_CHECK_FATAL(uvm_hdl_read(alert_major_internal_path, alert_major_internal))
+    end
     if (!glitch_lockstep_core && glitched_port_is_inp) begin
       // The input ports of the ibex_core module are defined as `logic` without an explicit net
       // type. According to the standard, simulation tools are thus supposed to model these inputs
@@ -692,23 +703,25 @@ class chip_sw_rv_core_ibex_lockstep_glitch_vseq extends chip_sw_base_vseq;
       check_alert_occurs("rv_core_ibex_fatal_hw_err", max_delay_clks + 5);
     end
 
-    // Check that `alert_major_internal_o` of `ibex_lockstep` matches our expectation. Depending on
-    // the glitched signal and core it may take several clock cycles for a potential alert to fire.
-    // We wait for at most max_delay_clks cycles.
-    alert_major_internal_path = $sformatf("%s.alert_major_internal_o", lockstep_path);
-    for (int i = 0; i <= max_delay_clks; i++) begin
-      `uvm_info(`gfn, $sformatf("Checking for potential alert in cycle %0d.", i), UVM_MEDIUM)
-      `DV_CHECK_FATAL(uvm_hdl_read(alert_major_internal_path, alert_major_internal))
-      if (exp_alert_major_internal) begin
-        if (alert_major_internal) begin
-          `uvm_info(`gfn, $sformatf("Major alert expectedly fired in cycle %0d.", i), UVM_LOW)
-          break;
+    // If we already got the alert_major_internal above, skip this check.
+    if (!alert_major_internal) begin
+      // Check that `alert_major_internal_o` of `ibex_lockstep` matches our expectation. Depending
+      // on the glitched signal and core it may take several clock cycles for a potential alert to
+      // fire. We wait for at most max_delay_clks cycles.
+      for (int i = 0; i <= max_delay_clks; i++) begin
+        `uvm_info(`gfn, $sformatf("Checking for potential alert in cycle %0d.", i), UVM_LOW)
+        `DV_CHECK_FATAL(uvm_hdl_read(alert_major_internal_path, alert_major_internal))
+        if (exp_alert_major_internal) begin
+          if (alert_major_internal) begin
+            `uvm_info(`gfn, $sformatf("Major alert expectedly fired in cycle %0d.", i), UVM_LOW)
+            break;
+          end
+        end else begin
+          `DV_CHECK_EQ_FATAL(alert_major_internal, exp_alert_major_internal,
+                            $sformatf("Major alert unexpectedly fired in cycle %0d.", i))
         end
-      end else begin
-        `DV_CHECK_EQ_FATAL(alert_major_internal, exp_alert_major_internal,
-                           $sformatf("Major alert unexpectedly fired in cycle %0d.", i))
+        cfg.chip_vif.cpu_clk_rst_if.wait_n_clks(1);
       end
-      cfg.chip_vif.cpu_clk_rst_if.wait_n_clks(1);
     end
 
     `DV_CHECK_EQ_FATAL(alert_major_internal, exp_alert_major_internal,
