@@ -778,210 +778,6 @@ module rv_core_ibex
     .err_o          (tlul_lc_gate_core_d_error)
   );
 
-  /////////////////////////////////////////////////////////////////
-  // Shadow Core Data Address Translation Unit and TL-UL Adapter //
-  /////////////////////////////////////////////////////////////////
-  if (SecureIbex) begin : gen_d_tlul_lockstep
-    // TL-UL output signals
-    tl_h2d_t      tl_d_shadow_core;
-    tl_h2d_t      tl_d_main_core_q [LockstepOffset];
-
-    // TL-UL input signals.
-    tl_d2h_t      tl_d_fifo2ibex_q [LockstepOffset];
-
-    // Translated addresses.
-    logic [31:0]  shadow_core_data_addr_trans;
-
-    // Delay the main core TL-UL input and outputs.
-    always_ff @(posedge clk_i or negedge rst_ni) begin
-      if (!rst_ni) begin
-        for (int unsigned i = 0; i < LockstepOffset; i++) begin
-          tl_d_main_core_q[i]             <= tl_h2d_t'('0);
-          tl_d_fifo2ibex_q[i]             <= tl_d2h_t'('0);
-        end
-      end else begin
-        for (int unsigned i = 0; i < LockstepOffset - 1; i++) begin
-          tl_d_main_core_q[i]             <= tl_d_main_core_q[i+1];
-          tl_d_fifo2ibex_q[i]             <= tl_d_fifo2ibex_q[i+1];
-        end
-        tl_d_main_core_q[LockstepOffset-1]            <= tl_d_ibex2fifo_main_core;
-        tl_d_fifo2ibex_q[LockstepOffset-1]            <= tl_d_fifo2ibex;
-      end
-    end
-
-    rv_core_ibex_addr_trans #(
-      .AddrWidth    (32),
-      .NumRegions   (NumRegions)
-    ) u_dbus_trans_shadow_core (
-      .clk_i,
-      .rst_ni       (addr_trans_rst_ni),
-      .region_cfg_i (dbus_region_cfg),
-      .addr_i       (shadow_core_data_addr),
-      .addr_o       (shadow_core_data_addr_trans)
-    );
-
-    logic unused_shadow_core_valid, unused_shadow_core_gnt;
-    logic unused_shadow_core_err, unused_shadow_core_intg_err;
-    logic [31:0] unused_shadow_core_rdata;
-    logic [6:0]  unused_shadow_core_rdata_intg;
-
-    tlul_adapter_host #(
-      .MAX_REQS(2),
-      .EnableDataIntgGen(~SecureIbex)
-    ) tl_adapter_host_d_ibex_shadow_core  (
-      .clk_i,
-      .rst_ni,
-      .req_i        (shadow_core_data_req           ),
-      .instr_type_i (prim_mubi_pkg::MuBi4False      ),
-      .gnt_o        (unused_shadow_core_gnt         ),
-      .addr_i       (shadow_core_data_addr_trans    ),
-      .we_i         (shadow_core_data_we            ),
-      .wdata_i      (shadow_core_data_wdata[31:0]   ),
-      .wdata_intg_i (shadow_core_data_wdata[38:32]  ),
-      .be_i         (shadow_core_data_be            ),
-      .user_rsvd_i  (TlulHostUserRsvdBits           ),
-      .valid_o      (unused_shadow_core_valid       ),
-      .rdata_o      (unused_shadow_core_rdata       ),
-      .rdata_intg_o (unused_shadow_core_rdata_intg  ),
-      .err_o        (unused_shadow_core_err         ),
-      .intg_err_o   (unused_shadow_core_intg_err    ),
-      .tl_o         (tl_d_shadow_core               ),
-      .tl_i         (tl_d_fifo2ibex_q[0]            )
-    );
-
-    // Compare the main and shadow core TL-UL outputs.
-    assign alert_rv_d_tlul_comparison =
-      ((lockstep_cmp_en != ibex_pkg::IbexMuBiOff) & (tl_d_main_core_q[0] != tl_d_shadow_core));
-
-    // Tie off unused signals.
-    logic unused_tlul_d_signals;
-    assign unused_tlul_d_signals = ^{unused_shadow_core_rdata_intg, unused_shadow_core_rdata,
-                                     unused_shadow_core_err, unused_shadow_core_intg_err,
-                                     unused_shadow_core_valid, unused_shadow_core_gnt};
-  end else begin : gen_no_d_tlul_lockstep
-    assign alert_rv_d_tlul_comparison = 1'b0;
-  end
-
-  ////////////////////////////////////////////////////////////////////////
-  // Shadow Core Instruction Address Translation Unit and TL-UL Adapter //
-  ////////////////////////////////////////////////////////////////////////
-  if (SecureIbex) begin : gen_i_tlul_lockstep
-    // Shadow core instruction interface (internal)
-    logic        shadow_core_instr_gnt, shadow_core_instr_gnt_ibex;
-    logic        shadow_core_instr_req_q;
-    logic [31:0] shadow_core_instr_addr_q;
-    logic [31:0] shadow_core_instr_addr_trans;
-
-    // TL-UL output signals
-    tl_h2d_t      tl_i_shadow_core;
-    tl_h2d_t      tl_i_main_core_q [LockstepOffset];
-
-    // TL-UL input signals.
-    tl_d2h_t      tl_i_fifo2ibex_q [LockstepOffset];
-
-    // Add an optional pipeline stage between Ibex and the address translation
-    if (InstructionPipeline) begin : gen_instr_req_pipe_lockstep
-      // Request is granted for Ibex if the pipeline's request is granted or if the pipeline
-      // is empty
-      assign shadow_core_instr_gnt_ibex = shadow_core_instr_gnt || !shadow_core_instr_req_q;
-      always_ff @(posedge clk_i or negedge rst_ni) begin
-        if (!rst_ni) begin
-          shadow_core_instr_req_q  <= 1'b0;
-          shadow_core_instr_addr_q <= 32'h0;
-        end else if (shadow_core_instr_gnt_ibex) begin
-          // The request is captured if the pipeline's request is granted or if the pipeline
-          // is empty
-          shadow_core_instr_req_q  <= shadow_core_instr_req;
-          // Only capture the address if the request is valid
-          if (shadow_core_instr_req) begin
-            shadow_core_instr_addr_q <= shadow_core_instr_addr;
-          end
-        end
-      end
-    end else begin : gen_no_instr_req_pipe_lockstep
-      assign shadow_core_instr_req_q = shadow_core_instr_req;
-      assign shadow_core_instr_addr_q = shadow_core_instr_addr;
-      assign shadow_core_instr_gnt_ibex = shadow_core_instr_gnt;
-
-      // Tie off unused signal.
-      logic unused_instr_gnt_signal;
-      assign unused_instr_gnt_signal = shadow_core_instr_gnt_ibex;
-    end
-
-    // Delay the main core TL-UL input and outputs.
-    always_ff @(posedge clk_i or negedge rst_ni) begin
-      if (!rst_ni) begin
-        for (int unsigned i = 0; i < LockstepOffset; i++) begin
-          tl_i_main_core_q[i]             <= tl_h2d_t'('0);
-          tl_i_fifo2ibex_q[i]             <= tl_d2h_t'('0);
-        end
-      end else begin
-        for (int unsigned i = 0; i < LockstepOffset - 1; i++) begin
-          tl_i_main_core_q[i]             <= tl_i_main_core_q[i+1];
-          tl_i_fifo2ibex_q[i]             <= tl_i_fifo2ibex_q[i+1];
-        end
-        tl_i_main_core_q[LockstepOffset-1]  <= tl_i_ibex2fifo;
-        tl_i_fifo2ibex_q[LockstepOffset-1]  <= tl_i_fifo2ibex;
-      end
-    end
-
-    rv_core_ibex_addr_trans #(
-      .AddrWidth    (32                           ),
-      .NumRegions   (NumRegions                   )
-    ) u_ibus_trans_shadow_core (
-      .clk_i,
-      .rst_ni       (addr_trans_rst_ni            ),
-      .region_cfg_i (ibus_region_cfg              ),
-      .addr_i       (shadow_core_instr_addr_q     ),
-      .addr_o       (shadow_core_instr_addr_trans )
-    );
-
-    logic unused_shadow_core_instr_rvalid;
-    logic unused_shadow_core_instr_err, unused_shadow_core_ibus_intg_err;
-    logic [31:0] unused_shadow_core_instr_rdata;
-    logic [6:0]  unused_shadow_core_instr_rdata_intg;
-
-    tlul_adapter_host #(
-      .MAX_REQS(NumOutstandingReqs),
-      // if secure ibex is not set, data integrity is not generated
-      // from ibex, therefore generate it in the gasket instead.
-      .EnableDataIntgGen(~SecureIbex)
-    ) tl_adapter_host_i_ibex_shadow_core (
-      .clk_i,
-      .rst_ni,
-      .req_i        (shadow_core_instr_req_q),
-      .instr_type_i (prim_mubi_pkg::MuBi4True),
-      .gnt_o        (shadow_core_instr_gnt),
-      .addr_i       (shadow_core_instr_addr_trans),
-      .we_i         (1'b0),
-      .wdata_i      (32'b0),
-      .wdata_intg_i (instr_wdata_intg),
-      .be_i         (4'hF),
-      .user_rsvd_i  (TlulHostUserRsvdBits),
-      .valid_o      (unused_shadow_core_instr_rvalid),
-      .rdata_o      (unused_shadow_core_instr_rdata),
-      .rdata_intg_o (unused_shadow_core_instr_rdata_intg),
-      .err_o        (unused_shadow_core_instr_err),
-      .intg_err_o   (unused_shadow_core_ibus_intg_err),
-      .tl_o         (tl_i_shadow_core),
-      .tl_i         (tl_i_fifo2ibex_q[0])
-    );
-
-    // Compare the main and shadow core TL-UL outputs.
-    assign alert_rv_i_tlul_comparison =
-      ((lockstep_cmp_en != ibex_pkg::IbexMuBiOff) & (tl_i_main_core_q[0] != tl_i_shadow_core));
-
-    // Tie off unused signals.
-    logic unused_tlul_i_signals;
-    assign unused_tlul_i_signals = ^{unused_shadow_core_instr_rvalid,
-                                     unused_shadow_core_instr_rdata,
-                                     unused_shadow_core_instr_rdata_intg,
-                                     unused_shadow_core_instr_err,
-                                     unused_shadow_core_ibus_intg_err};
-  end else begin : gen_no_i_tlul_lockstep
-    assign alert_rv_i_tlul_comparison = 1'b0;
-  end
-
 `ifdef RVFI
   ibex_tracer ibex_tracer_i (
     .clk_i,
@@ -1186,6 +982,279 @@ module rv_core_ibex
 
   // fpga build info hook-up
   assign hw2reg.fpga_info.d = fpga_info_i;
+
+  if (SecureIbex) begin : gen_tlul_lockstep
+    /////////////////////////////////////////////////////
+    // Shadow Core instruction and data region config. //
+    /////////////////////////////////////////////////////
+
+    rv_core_ibex_cfg_reg2hw_t reg2hw_shadow;
+    region_cfg_t [NumRegions-1:0] ibus_region_shadow_cfg;
+    region_cfg_t [NumRegions-1:0] dbus_region_shadow_cfg;
+    region_cfg_t [NumRegions-1:0] ibus_region_shadow_cfg_q [LockstepOffset];
+    region_cfg_t [NumRegions-1:0] dbus_region_shadow_cfg_q [LockstepOffset];
+
+    logic unused_intg_err_shadow;
+    tlul_pkg::tl_h2d_t unused_tl_win_h2d_shadow;
+    tlul_pkg::tl_d2h_t unused_cfg_tl_d_shadow;
+
+    rv_core_ibex_cfg_reg_top u_reg_cfg_shadow (
+      .clk_i,
+      .rst_ni,
+      .tl_i       (cfg_tl_d_i                     ),
+      .tl_o       (unused_cfg_tl_d_shadow         ),
+      .reg2hw     (reg2hw_shadow                  ),
+      .hw2reg     (rv_core_ibex_cfg_hw2reg_t'('0) ),
+      .intg_err_o (unused_intg_err_shadow         ),
+      .tl_win_o   (unused_tl_win_h2d_shadow       ),
+      .tl_win_i   (tl_win_d2h                     )
+    );
+
+    for(genvar i = 0; i < NumRegions; i++) begin : gen_ibus_region_shadow_cfgs
+      assign ibus_region_shadow_cfg[i].en = reg2hw_shadow.ibus_addr_en[i];
+      assign ibus_region_shadow_cfg[i].matching_region = reg2hw_shadow.ibus_addr_matching[i];
+      assign ibus_region_shadow_cfg[i].remap_addr = reg2hw_shadow.ibus_remap_addr[i];
+    end
+
+    for(genvar i = 0; i < NumRegions; i++) begin : gen_dbus_region_shadow_cfgs
+      assign dbus_region_shadow_cfg[i].en = reg2hw_shadow.dbus_addr_en[i];
+      assign dbus_region_shadow_cfg[i].matching_region = reg2hw_shadow.dbus_addr_matching[i];
+      assign dbus_region_shadow_cfg[i].remap_addr = reg2hw_shadow.dbus_remap_addr[i];
+    end
+
+    // Delay the instruction and data region config.
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) begin
+        for (int unsigned i = 0; i < LockstepOffset; i++) begin
+          for (int unsigned k = 0; k < NumRegions; k++) begin
+            ibus_region_shadow_cfg_q[i][k] <= region_cfg_t'('0);
+            dbus_region_shadow_cfg_q[i][k] <= region_cfg_t'('0);
+          end
+        end
+      end else begin
+        for (int unsigned i = 0; i < LockstepOffset - 1; i++) begin
+          for (int unsigned k = 0; k < NumRegions; k++) begin
+            ibus_region_shadow_cfg_q[i][k] <= ibus_region_shadow_cfg_q[i+1][k];
+            dbus_region_shadow_cfg_q[i][k] <= dbus_region_shadow_cfg_q[i+1][k];
+          end
+        end
+        for (int unsigned k = 0; k < NumRegions; k++) begin
+          ibus_region_shadow_cfg_q[LockstepOffset-1][k]  <= ibus_region_shadow_cfg[k];
+          dbus_region_shadow_cfg_q[LockstepOffset-1][k]  <= dbus_region_shadow_cfg[k];
+        end
+      end
+    end
+
+    // Tie off unused signals.
+    logic unused_reg_cfg_signals;
+    logic unused_reg2hw_shadow;
+    assign unused_reg_cfg_signals = ^{unused_intg_err_shadow, unused_tl_win_h2d_shadow,
+                                      unused_cfg_tl_d_shadow};
+
+    assign unused_reg2hw_shadow = ^{|reg2hw_shadow.alert_test, |reg2hw_shadow.nmi_enable,
+                                    |reg2hw_shadow.nmi_state, |reg2hw_shadow.rnd_data,
+                                    |reg2hw_shadow.sw_fatal_err, |reg2hw_shadow.sw_recov_err};
+
+    /////////////////////////////////////////////////////////////////
+    // Shadow Core Data Address Translation Unit and TL-UL Adapter //
+    /////////////////////////////////////////////////////////////////
+    // TL-UL output signals
+    tl_h2d_t      tl_d_shadow_core;
+    tl_h2d_t      tl_d_main_core_q [LockstepOffset];
+
+    // TL-UL input signals.
+    tl_d2h_t      tl_d_fifo2ibex_q [LockstepOffset];
+
+    // Translated addresses.
+    logic [31:0]  shadow_core_data_addr_trans;
+
+    // Delay the main core TL-UL input and outputs.
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) begin
+        for (int unsigned i = 0; i < LockstepOffset; i++) begin
+          tl_d_main_core_q[i]             <= tl_h2d_t'('0);
+          tl_d_fifo2ibex_q[i]             <= tl_d2h_t'('0);
+        end
+      end else begin
+        for (int unsigned i = 0; i < LockstepOffset - 1; i++) begin
+          tl_d_main_core_q[i]             <= tl_d_main_core_q[i+1];
+          tl_d_fifo2ibex_q[i]             <= tl_d_fifo2ibex_q[i+1];
+        end
+        tl_d_main_core_q[LockstepOffset-1]            <= tl_d_ibex2fifo_main_core;
+        tl_d_fifo2ibex_q[LockstepOffset-1]            <= tl_d_fifo2ibex;
+      end
+    end
+
+    rv_core_ibex_addr_trans #(
+      .AddrWidth    (32),
+      .NumRegions   (NumRegions)
+    ) u_dbus_trans_shadow_core (
+      .clk_i,
+      .rst_ni       (addr_trans_rst_ni),
+      .region_cfg_i (dbus_region_shadow_cfg_q[0]),
+      .addr_i       (shadow_core_data_addr),
+      .addr_o       (shadow_core_data_addr_trans)
+    );
+
+    logic unused_shadow_core_valid, unused_shadow_core_gnt;
+    logic unused_shadow_core_err, unused_shadow_core_intg_err;
+    logic [31:0] unused_shadow_core_rdata;
+    logic [6:0]  unused_shadow_core_rdata_intg;
+
+    tlul_adapter_host #(
+      .MAX_REQS(2),
+      .EnableDataIntgGen(~SecureIbex)
+    ) tl_adapter_host_d_ibex_shadow_core  (
+      .clk_i,
+      .rst_ni,
+      .req_i        (shadow_core_data_req           ),
+      .instr_type_i (prim_mubi_pkg::MuBi4False      ),
+      .gnt_o        (unused_shadow_core_gnt         ),
+      .addr_i       (shadow_core_data_addr_trans    ),
+      .we_i         (shadow_core_data_we            ),
+      .wdata_i      (shadow_core_data_wdata[31:0]   ),
+      .wdata_intg_i (shadow_core_data_wdata[38:32]  ),
+      .be_i         (shadow_core_data_be            ),
+      .user_rsvd_i  (TlulHostUserRsvdBits           ),
+      .valid_o      (unused_shadow_core_valid       ),
+      .rdata_o      (unused_shadow_core_rdata       ),
+      .rdata_intg_o (unused_shadow_core_rdata_intg  ),
+      .err_o        (unused_shadow_core_err         ),
+      .intg_err_o   (unused_shadow_core_intg_err    ),
+      .tl_o         (tl_d_shadow_core               ),
+      .tl_i         (tl_d_fifo2ibex_q[0]            )
+    );
+
+    // Compare the main and shadow core TL-UL outputs.
+    assign alert_rv_d_tlul_comparison =
+      ((lockstep_cmp_en != ibex_pkg::IbexMuBiOff) & (tl_d_main_core_q[0] != tl_d_shadow_core));
+
+    // Tie off unused signals.
+    logic unused_tlul_d_signals;
+    assign unused_tlul_d_signals = ^{unused_shadow_core_rdata_intg, unused_shadow_core_rdata,
+                                     unused_shadow_core_err, unused_shadow_core_intg_err,
+                                     unused_shadow_core_valid, unused_shadow_core_gnt};
+
+    ////////////////////////////////////////////////////////////////////////
+    // Shadow Core Instruction Address Translation Unit and TL-UL Adapter //
+    ////////////////////////////////////////////////////////////////////////
+
+    // Shadow core instruction interface (internal)
+    logic        shadow_core_instr_gnt, shadow_core_instr_gnt_ibex;
+    logic        shadow_core_instr_req_q;
+    logic [31:0] shadow_core_instr_addr_q;
+    logic [31:0] shadow_core_instr_addr_trans;
+
+    // TL-UL output signals
+    tl_h2d_t      tl_i_shadow_core;
+    tl_h2d_t      tl_i_main_core_q [LockstepOffset];
+
+    // TL-UL input signals.
+    tl_d2h_t      tl_i_fifo2ibex_q [LockstepOffset];
+
+    // Add an optional pipeline stage between Ibex and the address translation
+    if (InstructionPipeline) begin : gen_instr_req_pipe_lockstep
+      // Request is granted for Ibex if the pipeline's request is granted or if the pipeline
+      // is empty
+      assign shadow_core_instr_gnt_ibex = shadow_core_instr_gnt || !shadow_core_instr_req_q;
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+          shadow_core_instr_req_q  <= 1'b0;
+          shadow_core_instr_addr_q <= 32'h0;
+        end else if (shadow_core_instr_gnt_ibex) begin
+          // The request is captured if the pipeline's request is granted or if the pipeline
+          // is empty
+          shadow_core_instr_req_q  <= shadow_core_instr_req;
+          // Only capture the address if the request is valid
+          if (shadow_core_instr_req) begin
+            shadow_core_instr_addr_q <= shadow_core_instr_addr;
+          end
+        end
+      end
+    end else begin : gen_no_instr_req_pipe_lockstep
+      assign shadow_core_instr_req_q = shadow_core_instr_req;
+      assign shadow_core_instr_addr_q = shadow_core_instr_addr;
+      assign shadow_core_instr_gnt_ibex = shadow_core_instr_gnt;
+
+      // Tie off unused signal.
+      logic unused_instr_gnt_signal;
+      assign unused_instr_gnt_signal = shadow_core_instr_gnt_ibex;
+    end
+
+    // Delay the main core TL-UL input and outputs.
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) begin
+        for (int unsigned i = 0; i < LockstepOffset; i++) begin
+          tl_i_main_core_q[i]             <= tl_h2d_t'('0);
+          tl_i_fifo2ibex_q[i]             <= tl_d2h_t'('0);
+        end
+      end else begin
+        for (int unsigned i = 0; i < LockstepOffset - 1; i++) begin
+          tl_i_main_core_q[i]             <= tl_i_main_core_q[i+1];
+          tl_i_fifo2ibex_q[i]             <= tl_i_fifo2ibex_q[i+1];
+        end
+        tl_i_main_core_q[LockstepOffset-1]  <= tl_i_ibex2fifo;
+        tl_i_fifo2ibex_q[LockstepOffset-1]  <= tl_i_fifo2ibex;
+      end
+    end
+
+    rv_core_ibex_addr_trans #(
+      .AddrWidth    (32                           ),
+      .NumRegions   (NumRegions                   )
+    ) u_ibus_trans_shadow_core (
+      .clk_i,
+      .rst_ni       (addr_trans_rst_ni            ),
+      .region_cfg_i (ibus_region_shadow_cfg_q[0]  ),
+      .addr_i       (shadow_core_instr_addr_q     ),
+      .addr_o       (shadow_core_instr_addr_trans )
+    );
+
+    logic unused_shadow_core_instr_rvalid;
+    logic unused_shadow_core_instr_err, unused_shadow_core_ibus_intg_err;
+    logic [31:0] unused_shadow_core_instr_rdata;
+    logic [6:0]  unused_shadow_core_instr_rdata_intg;
+
+    tlul_adapter_host #(
+      .MAX_REQS(NumOutstandingReqs),
+      // if secure ibex is not set, data integrity is not generated
+      // from ibex, therefore generate it in the gasket instead.
+      .EnableDataIntgGen(~SecureIbex)
+    ) tl_adapter_host_i_ibex_shadow_core (
+      .clk_i,
+      .rst_ni,
+      .req_i        (shadow_core_instr_req_q),
+      .instr_type_i (prim_mubi_pkg::MuBi4True),
+      .gnt_o        (shadow_core_instr_gnt),
+      .addr_i       (shadow_core_instr_addr_trans),
+      .we_i         (1'b0),
+      .wdata_i      (32'b0),
+      .wdata_intg_i (instr_wdata_intg),
+      .be_i         (4'hF),
+      .user_rsvd_i  (TlulHostUserRsvdBits),
+      .valid_o      (unused_shadow_core_instr_rvalid),
+      .rdata_o      (unused_shadow_core_instr_rdata),
+      .rdata_intg_o (unused_shadow_core_instr_rdata_intg),
+      .err_o        (unused_shadow_core_instr_err),
+      .intg_err_o   (unused_shadow_core_ibus_intg_err),
+      .tl_o         (tl_i_shadow_core),
+      .tl_i         (tl_i_fifo2ibex_q[0])
+    );
+
+    // Compare the main and shadow core TL-UL outputs.
+    assign alert_rv_i_tlul_comparison =
+      ((lockstep_cmp_en != ibex_pkg::IbexMuBiOff) & (tl_i_main_core_q[0] != tl_i_shadow_core));
+
+    // Tie off unused signals.
+    logic unused_tlul_i_signals;
+    assign unused_tlul_i_signals = ^{unused_shadow_core_instr_rvalid,
+                                     unused_shadow_core_instr_rdata,
+                                     unused_shadow_core_instr_rdata_intg,
+                                     unused_shadow_core_instr_err,
+                                     unused_shadow_core_ibus_intg_err};
+  end else begin : gen_no_tlul_lockstep
+    assign alert_rv_d_tlul_comparison = 1'b0;
+    assign alert_rv_i_tlul_comparison = 1'b0;
+  end
 
   /////////////////////////////////////
   // The carved out space is for DV emulation purposes only
