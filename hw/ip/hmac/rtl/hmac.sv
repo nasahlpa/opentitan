@@ -30,6 +30,8 @@ module hmac
   output prim_mubi_pkg::mubi4_t idle_o
 );
 
+  logic intr_err, intg_err;
+  assign intr_hmac_err_o = intr_err | intg_err;
 
   /////////////////////////
   // Signal declarations //
@@ -508,7 +510,7 @@ module hmac
     .reg2hw_intr_state_q_i  (reg2hw.intr_state.hmac_err.q),
     .hw2reg_intr_state_de_o (hw2reg.intr_state.hmac_err.de),
     .hw2reg_intr_state_d_o  (hw2reg.intr_state.hmac_err.d),
-    .intr_o                 (intr_hmac_err_o)
+    .intr_o                 (intr_err)
   );
 
   ///////////////
@@ -580,11 +582,12 @@ module hmac
 
   // TL ADAPTER SRAM
   tlul_adapter_sram #(
-    .SramAw (9),
-    .SramDw (32),
-    .Outstanding (1),
-    .ByteAccess  (1),
-    .ErrOnRead   (1)
+    .SramAw       (9),
+    .SramDw       (32),
+    .Outstanding  (1),
+    .ByteAccess   (1),
+    .ErrOnRead    (1),
+    .CmdIntgCheck (1)
   ) u_tlul_adapter (
     .clk_i,
     .rst_ni,
@@ -599,7 +602,7 @@ module hmac
                                                    // other than sub-word
     .wdata_o                    (msg_fifo_wdata ),
     .wmask_o                    (msg_fifo_wmask ),
-    .intg_error_o               (               ),
+    .intg_error_o               (intg_err       ),
     .user_rsvd_o                (               ),
     .rdata_i                    (msg_fifo_rdata ),
     .rvalid_i                   (1'b0           ),
