@@ -603,24 +603,28 @@ module hmac
   localparam int NumBufferBitsFifoIntg = $bits({
     fifo_wvalid,
     sha_en,
-    fifo_rready
+    fifo_rready,
+    fifo_wdata.mask
   });
 
   logic [NumBufferBitsFifoIntg-1:0] buf_fifo_intg_in, buf_fifo_intg_out;
   logic fifo_wvalid_buf;
   logic sha_en_buf;
   logic fifo_rready_buf;
+  logic [$bits(fifo_wdata.mask)-1:0] fifo_wmask_buf;
 
   assign buf_fifo_intg_in = {
     fifo_wvalid,
     sha_en,
-    fifo_rready
+    fifo_rready,
+    fifo_wdata.mask
   };
 
   assign {
     fifo_wvalid_buf,
     sha_en_buf,
-    fifo_rready_buf
+    fifo_rready_buf,
+    fifo_wmask_buf
   } = buf_fifo_intg_out;
 
   prim_buf #(
@@ -632,8 +636,9 @@ module hmac
 
   // Integrity FIFO
   logic [6:0] fifo_rdata_intg;
+  logic [$bits(fifo_wdata.mask)-1:0] fifo_rdata_mask;
   prim_fifo_sync #(
-    .Width       (7),
+    .Width       ($bits(fifo_wdata.mask) + 7),
     .Pass        (1'b1),
     .Depth       (MsgFifoDepth),
     .NeverClears (1'b1)
@@ -644,19 +649,20 @@ module hmac
 
     .wvalid_i(fifo_wvalid_buf & sha_en_buf),
     .wready_o(msg_fifo_outputs_intg.fifo_wready),
-    .wdata_i (fifo_wdata_intg[38:32]),
+    .wdata_i ({fifo_wmask_buf, fifo_wdata_intg[38:32]}),
 
     .depth_o (msg_fifo_outputs_intg.fifo_depth),
     .full_o  (msg_fifo_outputs_intg.fifo_full),
 
     .rvalid_o(msg_fifo_outputs_intg.fifo_rvalid),
     .rready_i(fifo_rready_buf),
-    .rdata_o (fifo_rdata_intg),
+    .rdata_o ({fifo_rdata_mask, fifo_rdata_intg}),
     .err_o   ()
   );
 
   // Raise an alert if there is a mismatch in the message FIFOs outputs.
-  assign msg_fifo_outputs_mismatch = (msg_fifo_outputs != msg_fifo_outputs_intg);
+  assign msg_fifo_outputs_mismatch = (msg_fifo_outputs != msg_fifo_outputs_intg) |
+                                     (fifo_rdata.mask != fifo_rdata_mask);
 
   // Combine the msg FIFO rdata and radata_intg and check the integrity.
   logic [38:0] fifo_rdata_combined;
