@@ -30,8 +30,9 @@ module hmac
   output prim_mubi_pkg::mubi4_t idle_o
 );
 
-  logic intr_err, intg_err;
-  assign intr_hmac_err_o = intr_err | intg_err;
+  logic intr_err, intg_err, msg_fifo_outputs_mismatch;
+  logic [1:0] msg_fifo_intg_err;
+  assign intr_hmac_err_o = intr_err | intg_err | msg_fifo_outputs_mismatch | |msg_fifo_intg_err;
 
   /////////////////////////
   // Signal declarations //
@@ -51,15 +52,22 @@ module hmac
   logic        wipe_secret;
   logic [31:0] wipe_v;
 
-  logic        fifo_rvalid;
   logic        fifo_rready;
   sha_fifo32_t fifo_rdata;
 
-  logic        fifo_wvalid, fifo_wready;
+  logic        fifo_wvalid;
   sha_fifo32_t fifo_wdata;
-  logic        fifo_full;
   logic        fifo_empty;
-  logic [5:0]  fifo_depth;
+
+  typedef struct packed {
+    logic       fifo_wready;
+    logic       fifo_full;
+    logic       fifo_rvalid;
+    logic [5:0] fifo_depth;
+  } msg_fifo_outputs_t;
+
+  msg_fifo_outputs_t msg_fifo_outputs;
+  msg_fifo_outputs_t msg_fifo_outputs_intg;
 
   logic        msg_fifo_req;
   logic        msg_fifo_gnt;
@@ -135,9 +143,9 @@ module hmac
   ///////////////////////
   // Connect registers //
   ///////////////////////
-  assign hw2reg.status.fifo_full.d  = fifo_full;
+  assign hw2reg.status.fifo_full.d  = msg_fifo_outputs.fifo_full;
   assign hw2reg.status.fifo_empty.d = fifo_empty;
-  assign hw2reg.status.fifo_depth.d = fifo_depth;
+  assign hw2reg.status.fifo_depth.d = msg_fifo_outputs.fifo_depth;
   assign hw2reg.status.hmac_idle.d  = idle;
 
   typedef enum logic [1:0] {
@@ -454,7 +462,7 @@ module hmac
   logic fifo_full_posedge, fifo_full_q;
   logic fifo_full_seen_d, fifo_full_seen_q;
   assign fifo_empty_negedge = fifo_empty_q & ~fifo_empty;
-  assign fifo_full_posedge  = ~fifo_full_q & fifo_full;
+  assign fifo_full_posedge  = ~fifo_full_q & msg_fifo_outputs.fifo_full;
 
   // Track whether the FIFO was full after being empty. We clear the tracking:
   // - When receiving the Start, Continue, Process or Stop command. This is to start over for the
@@ -480,7 +488,7 @@ module hmac
       fifo_full_seen_q <= 1'b 0;
     end else begin
       fifo_empty_q     <= fifo_empty;
-      fifo_full_q      <= fifo_full;
+      fifo_full_q      <= msg_fifo_outputs.fifo_full;
       fifo_full_seen_q <= fifo_full_seen_d;
     end
   end
@@ -533,8 +541,9 @@ module hmac
   assign reg_fifo_wentry.data = conv_endian32(reg_fifo_wdata, 1'b1); // always convert
   assign reg_fifo_wentry.mask = {reg_fifo_wmask[0],  reg_fifo_wmask[8],
                                  reg_fifo_wmask[16], reg_fifo_wmask[24]};
-  assign fifo_empty  = ~fifo_rvalid;
-  assign fifo_wvalid = (hmac_fifo_wsel && fifo_wready) ? hmac_fifo_wvalid : reg_fifo_wvalid;
+  assign fifo_empty  = ~msg_fifo_outputs.fifo_rvalid;
+  assign fifo_wvalid = (hmac_fifo_wsel && msg_fifo_outputs.fifo_wready) ?
+                       hmac_fifo_wvalid : reg_fifo_wvalid;
 
   logic index;
   always_comb begin : select_fifo_wdata
@@ -568,16 +577,96 @@ module hmac
     .clr_i   (1'b0),
 
     .wvalid_i(fifo_wvalid & sha_en),
-    .wready_o(fifo_wready),
+    .wready_o(msg_fifo_outputs.fifo_wready),
     .wdata_i (fifo_wdata),
 
-    .depth_o (fifo_depth),
-    .full_o  (fifo_full),
+    .depth_o (msg_fifo_outputs.fifo_depth),
+    .full_o  (msg_fifo_outputs.fifo_full),
 
-    .rvalid_o(fifo_rvalid),
+    .rvalid_o(msg_fifo_outputs.fifo_rvalid),
     .rready_i(fifo_rready),
     .rdata_o (fifo_rdata),
     .err_o   ()
+  );
+
+  // Compute an integrity tag over the FIFO write data.
+  logic [38:0] fifo_wdata_intg;
+  prim_secded_inv_39_32_enc u_secded_enc (
+    .data_i (fifo_wdata.data),
+    .data_o (fifo_wdata_intg)
+  );
+
+  logic unused_fifo_wdata;
+  assign unused_fifo_wdata = ^fifo_wdata_intg[31:0];
+
+  // Buffer the inputs of the FIFO holding the integrity to avoid synthesis optimizations.
+  localparam int NumBufferBitsFifoIntg = $bits({
+    fifo_wvalid,
+    sha_en,
+    fifo_rready
+  });
+
+  logic [NumBufferBitsFifoIntg-1:0] buf_fifo_intg_in, buf_fifo_intg_out;
+  logic fifo_wvalid_buf;
+  logic sha_en_buf;
+  logic fifo_rready_buf;
+
+  assign buf_fifo_intg_in = {
+    fifo_wvalid,
+    sha_en,
+    fifo_rready
+  };
+
+  assign {
+    fifo_wvalid_buf,
+    sha_en_buf,
+    fifo_rready_buf
+  } = buf_fifo_intg_out;
+
+  prim_buf #(
+    .Width(NumBufferBitsFifoIntg)
+  ) u_reqfifo_intg_prim_buf (
+    .in_i(buf_fifo_intg_in),
+    .out_o(buf_fifo_intg_out)
+  );
+
+  // Integrity FIFO
+  logic [6:0] fifo_rdata_intg;
+  prim_fifo_sync #(
+    .Width       (7),
+    .Pass        (1'b1),
+    .Depth       (MsgFifoDepth),
+    .NeverClears (1'b1)
+  ) u_msg_fifo_intg (
+    .clk_i,
+    .rst_ni,
+    .clr_i   (1'b0),
+
+    .wvalid_i(fifo_wvalid_buf & sha_en_buf),
+    .wready_o(msg_fifo_outputs_intg.fifo_wready),
+    .wdata_i (fifo_wdata_intg[38:32]),
+
+    .depth_o (msg_fifo_outputs_intg.fifo_depth),
+    .full_o  (msg_fifo_outputs_intg.fifo_full),
+
+    .rvalid_o(msg_fifo_outputs_intg.fifo_rvalid),
+    .rready_i(fifo_rready_buf),
+    .rdata_o (fifo_rdata_intg),
+    .err_o   ()
+  );
+
+  // Raise an alert if there is a mismatch in the message FIFOs outputs.
+  assign msg_fifo_outputs_mismatch = (msg_fifo_outputs != msg_fifo_outputs_intg);
+
+  // Combine the msg FIFO rdata and radata_intg and check the integrity.
+  logic [38:0] fifo_rdata_combined;
+  assign fifo_rdata_combined = fifo_rready ? {fifo_rdata_intg, fifo_rdata.data} :
+                                             prim_secded_pkg::SecdedInv3932ZeroWord;
+  prim_secded_inv_39_32_dec u_secded_dec (
+    .data_i    (fifo_rdata_combined),
+    .data_o    (),
+    .syndrome_o(),
+    .err_o     (msg_fifo_intg_err)
   );
 
   // TL ADAPTER SRAM
@@ -679,7 +768,7 @@ module hmac
     .valid_o      (reg_fifo_wvalid),
     .data_o       (reg_fifo_wdata),
     .mask_o       (reg_fifo_wmask),
-    .ready_i      (fifo_wready & ~hmac_fifo_wsel),
+    .ready_i      (msg_fifo_outputs.fifo_wready & ~hmac_fifo_wsel),
 
     .flush_i      (hash_process),
     .flush_done_o (packer_flush_done), // ignore at this moment
@@ -709,14 +798,14 @@ module hmac
     .sha_rdata_o      (shaf_rdata),
     .sha_rready_i     (shaf_rready),
 
-    .fifo_rvalid_i (fifo_rvalid),
+    .fifo_rvalid_i (msg_fifo_outputs.fifo_rvalid),
     .fifo_rdata_i  (fifo_rdata),
     .fifo_rready_o (fifo_rready),
 
     .fifo_wsel_o      (hmac_fifo_wsel),
     .fifo_wvalid_o    (hmac_fifo_wvalid),
     .fifo_wdata_sel_o (hmac_fifo_wdata_sel),
-    .fifo_wready_i    (fifo_wready),
+    .fifo_wready_i    (msg_fifo_outputs.fifo_wready),
 
     .message_length_i     (message_length),
     .sha_message_length_o (sha_message_length),
@@ -881,7 +970,7 @@ module hmac
   //  - Clean interrupt status
   // ICEBOX(#12958): Revise prim_packer and replace `reg_fifo_wvalid` to the
   // empty status.
-  assign idle = !reg_fifo_wvalid && !fifo_rvalid
+  assign idle = !reg_fifo_wvalid && !msg_fifo_outputs.fifo_rvalid
               && hmac_core_idle && sha_core_idle;
 
   prim_mubi_pkg::mubi4_t idle_q, idle_d;
