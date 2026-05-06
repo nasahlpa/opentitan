@@ -181,6 +181,14 @@ py_binary(
 )
 
 py_binary(
+    name = "nist_cavp_rsa_siggen_parser",
+    srcs = ["nist_cavp_rsa_siggen_parser.py"],
+    deps = [
+        requirement("pycryptodome"),
+    ],
+)
+
+py_binary(
     name = "rsp_sphincsplus_parser",
     srcs = ["rsp_sphincsplus_parser.py"],
     deps = [

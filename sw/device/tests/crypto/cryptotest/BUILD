@@ -56,7 +56,7 @@ cryptotest(
 )
 
 cryptotest(
-    name = "rsa_acvp",
+    name = "rsa_sigver_acvp",
     slow_test = True,
     test_args = " ".join([
         "--input=\"$(rootpath //sw/host/cryptotest/testvectors/acvp:rsa_vectors.json)\"",
@@ -66,6 +66,20 @@ cryptotest(
     test_vectors = [
         "//sw/host/cryptotest/testvectors/acvp:rsa_vectors.json",
         "//sw/host/cryptotest/testvectors/acvp:rsa_expected.json",
+    ],
+)
+
+cryptotest(
+    name = "rsa_siggen_acvp",
+    slow_test = True,
+    test_args = " ".join([
+        "--input=\"$(rootpath //sw/host/cryptotest/testvectors/data:nist_cavp_rsa_siggen_vectors.json)\"",
+        "--expected=\"$(rootpath //sw/host/cryptotest/testvectors/data:nist_cavp_rsa_siggen_expected.json)\"",
+    ]),
+    test_harness = "//sw/host/tests/crypto/acvp:harness",
+    test_vectors = [
+        "//sw/host/cryptotest/testvectors/data:nist_cavp_rsa_siggen_vectors.json",
+        "//sw/host/cryptotest/testvectors/data:nist_cavp_rsa_siggen_expected.json",
     ],
 )
 
@@ -702,7 +716,8 @@ test_suite(
         ":hmac_sha384_kat",
         ":hmac_sha512_kat",
         ":kmac_kat",
-        ":rsa_acvp",
+        ":rsa_sigver_acvp",
+        ":rsa_siggen_acvp",
         ":rsa_kat",
         ":sha256_kat",
         ":sha384_kat",

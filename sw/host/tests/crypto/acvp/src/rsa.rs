@@ -10,7 +10,8 @@ use std::time::Duration;
 
 use cryptotest_commands::commands::CryptotestCommand;
 use cryptotest_commands::rsa_commands::{
-    CryptotestRsaVerify, CryptotestRsaVerifyResp, RsaSubcommand,
+    CryptotestRsaSign, CryptotestRsaSignResp, CryptotestRsaVerify, CryptotestRsaVerifyResp,
+    RsaSubcommand,
 };
 
 use opentitanlib::console::spi::SpiConsoleDevice;
@@ -67,6 +68,10 @@ struct RsaTestGroup {
     hash_alg: String,
     #[serde(default)]
     sig_type: Option<String>,
+    #[serde(default)]
+    n: Option<String>,
+    #[serde(default)]
+    d: Option<String>,
     tests: Vec<RsaTestCase>,
 }
 
@@ -75,6 +80,8 @@ struct RsaTestGroup {
 pub struct RsaTestVectorSet {
     vs_id: usize,
     algorithm: String,
+    #[serde(default)]
+    mode: Option<String>,
     revision: String,
     #[serde(default)]
     is_sample: bool,
@@ -183,6 +190,98 @@ fn run_rsa_verify_case(
     })
 }
 
+fn run_rsa_sign_case(
+    timeout: Duration,
+    spi_console: &SpiConsoleDevice,
+    tg: &RsaTestGroup,
+    tc: &RsaTestCase,
+    padding: usize,
+    hashing: usize,
+) -> Result<RsaResultCase> {
+    // n and d are at group level for sigGen (one key per group).
+    let mut n = Vec::<u8>::from_hex(tg.n.as_ref().unwrap())?;
+    n.reverse();
+    if n.len() * u8::BITS as usize != tg.modulo {
+        assert_eq!(n.pop(), Some(0u8));
+    }
+
+    let mut d = Vec::<u8>::from_hex(tg.d.as_ref().unwrap())?;
+    d.reverse();
+    if d.len() * u8::BITS as usize != tg.modulo {
+        assert_eq!(d.pop(), Some(0u8));
+    }
+
+    let msg = Vec::<u8>::from_hex(tc.msg.as_ref().unwrap())?;
+
+    let mut n_array = arrayvec::ArrayVec::<u8, RSA_MAX_BYTES>::new();
+    n_array.try_extend_from_slice(&n)?;
+    let mut d_array = arrayvec::ArrayVec::<u8, RSA_MAX_BYTES>::new();
+    d_array.try_extend_from_slice(&d)?;
+    let mut msg_array = arrayvec::ArrayVec::<u8, RSA_MAX_MSG_BYTES>::new();
+    msg_array.try_extend_from_slice(&msg)?;
+
+    CryptotestCommand::Rsa.send(spi_console)?;
+    RsaSubcommand::RsaSign.send(spi_console)?;
+    CryptotestRsaSign {
+        msg: msg_array,
+        msg_len: msg.len(),
+        e: 65537,
+        d: d_array,
+        n: n_array.clone(),
+        security_level: tg.modulo,
+        label: arrayvec::ArrayVec::new(),
+        label_len: 0,
+        hashing,
+        padding,
+    }
+    .send(spi_console)?;
+
+    let sign_resp = CryptotestRsaSignResp::recv(spi_console, timeout, false, false)?;
+
+    let expected_sig = tc.sig.as_deref().unwrap_or("");
+    let test_passed = if !expected_sig.is_empty() {
+        // PKCS#1 v1.5 is deterministic: compare byte-for-byte.
+        // Firmware outputs in little-endian; vector stores big-endian.
+        let expected = Vec::<u8>::from_hex(expected_sig)?;
+        let mut produced = Vec::from(&sign_resp.signature[..sign_resp.signature_len]);
+        produced.reverse();
+        produced == expected
+    } else {
+        // Randomised scheme (PSS): verify the produced signature.
+        let sig = Vec::from(&sign_resp.signature[..sign_resp.signature_len]);
+
+        let mut sig_array = arrayvec::ArrayVec::<u8, RSA_MAX_MSG_BYTES>::new();
+        sig_array.try_extend_from_slice(&sig)?;
+        let mut msg_array2 = arrayvec::ArrayVec::<u8, RSA_MAX_MSG_BYTES>::new();
+        msg_array2.try_extend_from_slice(&msg)?;
+
+        CryptotestCommand::Rsa.send(spi_console)?;
+        RsaSubcommand::RsaVerify.send(spi_console)?;
+        CryptotestRsaVerify {
+            padding,
+            security_level: tg.modulo,
+            hashing,
+            e: 65537,
+            n: n_array,
+            sig_len: sign_resp.signature_len,
+            sig: sig_array,
+            msg_len: msg.len(),
+            msg: msg_array2,
+        }
+        .send(spi_console)?;
+
+        let verify_resp = CryptotestRsaVerifyResp::recv(spi_console, timeout, false, false)?;
+        verify_resp.result
+    };
+
+    Ok(RsaResultCase {
+        tc_id: tc.tc_id,
+        test_passed: Some(test_passed),
+        ct: None,
+        pt: None,
+    })
+}
+
 fn run_rsa_group(
     timeout: Duration,
     spi_console: &SpiConsoleDevice,
@@ -232,6 +331,15 @@ fn run_rsa_group(
                 padding,
                 hashing,
             )?);
+        } else if algorithm.contains("sigGen") {
+            result_cases.push(run_rsa_sign_case(
+                timeout,
+                spi_console,
+                tg,
+                tc,
+                padding,
+                hashing,
+            )?);
         } else {
             return Err(std::io::Error::other(format!(
                 "Algorithm {} not implemented in harness",
@@ -269,11 +377,18 @@ pub fn run_rsa_vector_set(
 
     let mut result_groups = Vec::with_capacity(vs.test_groups.len());
 
+    // Combine algorithm and mode so the dispatcher can match "sigGen"/"sigVer"
+    // whether the vector set uses algorithm="RSA-sigGen" or algorithm="RSA" + mode="sigGen".
+    let algo_mode = match vs.mode.as_deref() {
+        Some(m) if !vs.algorithm.contains(m) => format!("{}-{}", vs.algorithm, m),
+        _ => vs.algorithm.clone(),
+    };
+
     for tg in &vs.test_groups {
         result_groups.push(run_rsa_group(
             timeout,
             spi_console,
-            &vs.algorithm,
+            &algo_mode,
             tg,
             skip_stride,
             start_offset,

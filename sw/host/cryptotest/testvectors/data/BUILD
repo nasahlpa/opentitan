@@ -607,6 +607,29 @@ run_binary(
     ]
 ]
 
+run_binary(
+    name = "nist_cavp_rsa_siggen_json",
+    srcs = [
+        "@nist_cavp_rsa_fips_186_3//:SigGen15_186-3.txt",
+        "@nist_cavp_rsa_fips_186_3//:SigGenPSS_186-3.txt",
+    ],
+    outs = [
+        "nist_cavp_rsa_siggen_vectors.json",
+        "nist_cavp_rsa_siggen_expected.json",
+    ],
+    args = [
+        "--pkcs-src",
+        "$(location @nist_cavp_rsa_fips_186_3//:SigGen15_186-3.txt)",
+        "--pss-src",
+        "$(location @nist_cavp_rsa_fips_186_3//:SigGenPSS_186-3.txt)",
+        "--vectors-dst",
+        "$(location nist_cavp_rsa_siggen_vectors.json)",
+        "--expected-dst",
+        "$(location nist_cavp_rsa_siggen_expected.json)",
+    ],
+    tool = "//sw/host/cryptotest/testvectors/parsers:nist_cavp_rsa_siggen_parser",
+)
+
 WYCHEPROOF_RSA_OAEP_SUFFIXES = {
     2048: [
         "sha256_mgf1sha256",
