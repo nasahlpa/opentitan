@@ -62,8 +62,18 @@ if {$PARAMS != ""} {
 }
 
 # Define clock and reset synchronizer modules.
-set_user_cntl_synchronizer -name ot_cntl_synchronizer prim_flop_2sync
-set_user_reset_synchronizer -name ot_reset_synchronizer prim_rst_sync
+# Only declare a synchronizer if its module is actually present in the
+# elaborated design.  A standalone block-level run (as opposed to the full top)
+# may not instantiate all of these primitives (e.g. rram_ctrl receives already
+# synchronized resets and does not contain prim_rst_sync).  Issuing the command
+# for an absent module aborts the run with an "empty module list" error
+# (#96033), so guard each one.
+if {[llength [get_all_modules prim_flop_2sync]] > 0} {
+  set_user_cntl_synchronizer -name ot_cntl_synchronizer prim_flop_2sync
+}
+if {[llength [get_all_modules prim_rst_sync]] > 0} {
+  set_user_reset_synchronizer -name ot_reset_synchronizer prim_rst_sync
+}
 
 # Create and load ENV file from SDC.
 create_scenario { sdc env }
