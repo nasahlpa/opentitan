@@ -211,7 +211,7 @@ class keymgr_scoreboard extends cip_base_scoreboard #(
 
     case (update_result)
       UpdateInternalKey: begin
-        // digest is 384 bits wide while internal key is only 256, need to truncate it
+        // the digest is wider than the internal key, need to truncate it
         current_internal_key[current_cdi] = {txn.m_rsp.m_digest_s1[keymgr_pkg::KeyWidth-1:0],
                                              txn.m_rsp.m_digest_s0[keymgr_pkg::KeyWidth-1:0]};
         cfg.keymgr_vif.store_internal_key(current_internal_key[current_cdi], current_state,
@@ -223,7 +223,7 @@ class keymgr_scoreboard extends cip_base_scoreboard #(
       UpdateSwOut: begin
         if (!get_fault_err) begin
           bit [keymgr_pkg::Shares-1:0][DIGEST_SHARE_WORD_NUM-1:0][TL_DW-1:0] sw_share_output;
-          // digest is 384 bits wide while SW output is only 256, need to truncate it
+          // the digest is wider than the SW output, need to truncate it
           sw_share_output = {txn.m_rsp.m_digest_s1[keymgr_pkg::KeyWidth-1:0],
                              txn.m_rsp.m_digest_s0[keymgr_pkg::KeyWidth-1:0]};
           foreach (sw_share_output[i, j]) begin

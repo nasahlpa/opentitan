@@ -73,6 +73,11 @@ module keymgr_sideload_key_ctrl import keymgr_pkg::*;(
     assign data_truncated_otbn[i] = data_i[i][OtbnKeyWidth-1:0];
   end
 
+  // Tie-off unused bits. The KMAC output is wider than the widest sideload key,
+  // the upper bits are unused.
+  logic unused_data;
+  assign unused_data = ^data_i;
+
   // clear all keys when selected by software, or when
   // wipe command is received
   logic clr_all_keys;

@@ -818,9 +818,9 @@ After issuing the `PROCESS` command, OTBN software thus must do the following:
 The number of digest parts pushed by the app interface depends on the selected mode, strength and XOF setting.
 
 For SHA3 and KMAC, `KMAC_CFG.EN_XOF` must be `0` and the interface pushes only the SHA3 digest or the requested output length for KMAC.
-The requested output length of KMAC is fixed by the KMAC HWIP to 384 bits.
+The requested output length of KMAC is fixed by the KMAC HWIP to 512 bits.
 For SHA3 it pushes `roundup(digest_width / 64)` responses.
-For KMAC it pushes `384 / 64 = 6` responses.
+For KMAC it pushes `512 / 64 = 8` responses.
 Once these are pushed, the interface waits for a `DONE` command as explained [below](#ending-a-session).
 
 If the mode is SHAKE or cSHAKE, `KMAC_CFG.EN_XOF` controls whether the KMAC HWIP automatically issues RUN commands.

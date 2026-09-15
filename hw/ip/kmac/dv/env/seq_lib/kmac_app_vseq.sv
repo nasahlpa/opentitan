@@ -28,7 +28,7 @@ class kmac_app_vseq extends kmac_sideload_vseq;
 
   constraint kmac_app_c {
     if (en_app) {
-      // application interface outputs 384-bit digest (48 bytes)
+      // the application interface digest width is fixed by the KMAC HWIP
       output_len == kmac_pkg::AppDigestW / 8;
 
       // KMAC_APP will never use XOF mode
