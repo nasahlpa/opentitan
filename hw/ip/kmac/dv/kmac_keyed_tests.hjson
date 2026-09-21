@@ -1,0 +1,48 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+
+// Tests that require the keyed MAC, either directly or through the sequences they run. These are
+// not available if the KMAC functionality is stripped off (EnFullKmac == 0), so this list is only
+// imported by the variants providing the full KMAC.
+{
+  // The stress_all sequence runs the KMAC test vector sequences, so the stress tests are part of
+  // this list as well.
+  import_cfgs: ["{proj_root}/hw/dv/tools/dvsim/tests/stress_tests.hjson"]
+
+  // List of test specifications.
+  tests: [
+    {
+      name: "{name}_sideload_invalid"
+      uvm_test_seq: kmac_sideload_invalid_vseq
+      run_opts: ["+test_timeout_ns=1_000_000_000"]
+      reseed: 50
+    }
+    {
+      name: "{name}_test_vectors_kmac"
+      uvm_test_seq: kmac_test_vectors_kmac_vseq
+      run_opts: ["+test_vectors_dir={build_dir}/fusesoc-work/src/lowrisc_dv_test_vectors_0"]
+      reseed: 5
+    }
+    {
+      name: "{name}_test_vectors_kmac_xof"
+      uvm_test_seq: kmac_test_vectors_kmac_xof_vseq
+      run_opts: ["+test_vectors_dir={build_dir}/fusesoc-work/src/lowrisc_dv_test_vectors_0"]
+      reseed: 5
+    }
+    {
+      name: "{name}_key_error"
+      uvm_test_seq: kmac_key_error_vseq
+    }
+    {
+      name: kmac_stress_all
+      run_opts: ["+test_timeout_ns=10_000_000_000",
+                 "+test_vectors_dir={build_dir}/fusesoc-work/src/lowrisc_dv_test_vectors_0"]
+    }
+    {
+      name: kmac_stress_all_with_rand_reset
+      run_opts: ["+test_vectors_dir={build_dir}/fusesoc-work/src/lowrisc_dv_test_vectors_0"]
+      reseed: 10
+    }
+  ]
+}

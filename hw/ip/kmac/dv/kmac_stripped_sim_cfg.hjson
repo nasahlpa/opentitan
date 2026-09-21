@@ -2,19 +2,18 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-// sim cfg file for the masked version of KMAC
+// sim cfg file for the stripped version of KMAC
 {
   // Name of the sim cfg variant
-  variant: masked
+  variant: stripped
 
   // Import additional common sim cfg files.
+  // The tests requiring the keyed MAC (kmac_keyed_tests.hjson) are not imported as the KMAC
+  // functionality is stripped off in this variant.
   import_cfgs: ["{proj_root}/hw/ip/kmac/dv/kmac_base_sim_cfg.hjson",
-                "{proj_root}/hw/ip/kmac/dv/kmac_tests.hjson",
-                "{proj_root}/hw/ip/kmac/dv/kmac_keyed_tests.hjson"]
+                "{proj_root}/hw/ip/kmac/dv/kmac_tests.hjson"]
 
   // Enable this build mode for all tests
-  en_build_modes: ["enable_mask_mode"]
+  en_build_modes: ["stripped_down_kmac"]
 
-  // exclusion files
-  vcs_cov_excl_files: ["{proj_root}/hw/ip/kmac/dv/cov/kmac_masked_terminal_st_excl.el"]
 }

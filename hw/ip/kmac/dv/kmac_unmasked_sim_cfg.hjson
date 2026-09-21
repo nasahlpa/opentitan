@@ -8,7 +8,9 @@
   variant: unmasked
 
   // Import additional common sim cfg files.
-  import_cfgs: ["{proj_root}/hw/ip/kmac/dv/kmac_base_sim_cfg.hjson"]
+  import_cfgs: ["{proj_root}/hw/ip/kmac/dv/kmac_base_sim_cfg.hjson",
+                "{proj_root}/hw/ip/kmac/dv/kmac_tests.hjson",
+                "{proj_root}/hw/ip/kmac/dv/kmac_keyed_tests.hjson"]
 
   // Enable this build mode for all tests
   en_build_modes: ["disable_mask_mode"]
